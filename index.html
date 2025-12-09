@@ -4,80 +4,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Tiro Híbrida</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Tiro Táctico Avanzado</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
     <div class="container">
-        <h2>SISTEMA DE TIRO (HÍBRIDO)</h2>
 
-        <div class="section">
-            <h3>1. Tu Posición (Mortero)</h3>
-            <div class="data-row">
-                <div>
-                    <label>Este (X):</label>
-                    <input type="number" id="mx" placeholder="0000">
+        <div class="form-column">
+            <h2>SISTEMA DE TIRO</h2>
+
+            <div class="mode-selector">
+                <label>MODO DE ENTRADA:</label>
+                <select id="inputMode">
+                    <option value="utm">COORDENADAS UTM (Metros)</option>
+                    <option value="dms">GRADOS MINUTOS SEGUNDOS (DMS)</option>
+                </select>
+            </div>
+
+            <div class="section">
+                <h3>1. Posición Mortero (M)</h3>
+
+                <div id="mortero-utm" class="input-group">
+                    <div class="data-row">
+                        <input type="number" id="mx" placeholder="Este (X)" inputmode="decimal">
+                        <input type="number" id="my" placeholder="Norte (Y)" inputmode="decimal">
+                    </div>
                 </div>
-                <div>
-                    <label>Norte (Y):</label>
-                    <input type="number" id="my" placeholder="0000">
+
+                <div id="mortero-dms" class="input-group hidden">
+                    <label>Latitud (S):</label>
+                    <div class="dms-row">
+                        <input type="number" id="mlat_d" placeholder="Gr°">
+                        <input type="number" id="mlat_m" placeholder="Min'">
+                        <input type="number" id="mlat_s" placeholder="Seg''">
+                    </div>
+                    <label>Longitud (W):</label>
+                    <div class="dms-row">
+                        <input type="number" id="mlon_d" placeholder="Gr°">
+                        <input type="number" id="mlon_m" placeholder="Min'">
+                        <input type="number" id="mlon_s" placeholder="Seg''">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>2. Posición Objetivo (T)</h3>
+
+                <div id="target-utm" class="input-group">
+                    <div class="data-row">
+                        <input type="number" id="tx" placeholder="Este (X)" inputmode="decimal">
+                        <input type="number" id="ty" placeholder="Norte (Y)" inputmode="decimal">
+                    </div>
+                </div>
+
+                <div id="target-dms" class="input-group hidden">
+                    <label>Latitud (S):</label>
+                    <div class="dms-row">
+                        <input type="number" id="tlat_d" placeholder="Gr°">
+                        <input type="number" id="tlat_m" placeholder="Min'">
+                        <input type="number" id="tlat_s" placeholder="Seg''">
+                    </div>
+                    <label>Longitud (W):</label>
+                    <div class="dms-row">
+                        <input type="number" id="tlon_d" placeholder="Gr°">
+                        <input type="number" id="tlon_m" placeholder="Min'">
+                        <input type="number" id="tlon_s" placeholder="Seg''">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>3. Observador (Opcional)</h3>
+                <small>Usa esto para hallar al objetivo</small>
+
+                <div id="obs-utm" class="input-group">
+                    <div class="data-row">
+                        <input type="number" id="ox" placeholder="Obs Este (X)" inputmode="decimal">
+                        <input type="number" id="oy" placeholder="Obs Norte (Y)" inputmode="decimal">
+                    </div>
+                </div>
+
+                <div id="obs-dms" class="input-group hidden">
+                    <label>Latitud Obs (S):</label>
+                    <div class="dms-row">
+                        <input type="number" id="olat_d" placeholder="Gr°">
+                        <input type="number" id="olat_m" placeholder="Min'">
+                        <input type="number" id="olat_s" placeholder="Seg''">
+                    </div>
+                    <label>Longitud Obs (W):</label>
+                    <div class="dms-row">
+                        <input type="number" id="olon_d" placeholder="Gr°">
+                        <input type="number" id="olon_m" placeholder="Min'">
+                        <input type="number" id="olon_s" placeholder="Seg''">
+                    </div>
+                </div>
+
+                <div class="data-row" style="margin-top:10px; border-top:1px dashed #00ff41; padding-top:10px;">
+                    <input type="number" id="distObs" placeholder="Distancia (m)" inputmode="decimal">
+                    <input type="number" id="azObs" placeholder="Azimut (°)" inputmode="decimal">
+                </div>
+
+                <button id="btnCalcularObs" style="font-size: 0.9rem; padding: 10px; border: 1px dashed #00ff41;">
+                    CALCULAR UBICACIÓN OBJETIVO
+                </button>
+            </div>
+
+            <button id="btnFuego">¡CALCULAR SOLUCIÓN!</button>
+
+            <div id="resultado" class="hidden">
+                <h3>SOLUCIÓN DE FUEGO</h3>
+                <div class="result-grid">
+                    <p class="final-data">AZIMUT: <span id="resAzimut">0</span>°</p>
+                    <p class="final-data">DISTANCIA: <span id="resDist">0</span> m</p>
+                </div>
+                <div id="conversionInfo" style="margin-top:10px; font-size: 0.8rem; color:#aaa; text-align:center;">
                 </div>
             </div>
         </div>
 
-        <div class="section" style="border: 1px solid #00ff41; padding: 10px;">
-            <h3>2. Coordenadas del Objetivo</h3>
-            <small>Escríbelas manual O usa el Observador abajo</small>
-            <div class="data-row">
-                <div>
-                    <label>Obj Este (Tx):</label>
-                    <input type="number" id="tx" placeholder="Destino X">
-                </div>
-                <div>
-                    <label>Obj Norte (Ty):</label>
-                    <input type="number" id="ty" placeholder="Destino Y">
-                </div>
-            </div>
+        <div class="radar-column">
+            <h3 style="text-align:center; border:none; background:none;">MAPA SATELITAL (ZONA 18S)</h3>
+            <div id="map"></div>
         </div>
 
-        <div class="section">
-            <h3>3. Datos del Observador (Opcional)</h3>
-            <small>Solo llenar si NO tienes coord. del objetivo</small>
-            <div class="data-row">
-                <input type="number" id="ox" placeholder="Obs X">
-                <input type="number" id="oy" placeholder="Obs Y">
-            </div>
-            <div class="data-row" style="margin-top:5px;">
-                <input type="number" id="distObs" placeholder="Distancia Vis">
-                <input type="number" id="azObs" placeholder="Azimut Vis">
-            </div>
-            <button id="btnCalcularObs" style="margin-top:10px; font-size: 0.8rem; padding: 5px;">CALCULAR COORDENADAS
-                DESDE OBS</button>
-        </div>
-
-        <hr class="separator">
-
-        <button id="btnFuego">¡CALCULAR DATOS DE TIRO!</button>
-
-        <div id="resultado" class="hidden">
-            <h3>SOLUCIÓN DE FUEGO</h3>
-            <div class="result-grid">
-                <p class="final-data">AZIMUT: <span id="resAzimut" class="blink">0</span>°</p>
-                <p class="final-data">DISTANCIA: <span id="resDist">0</span> m</p>
-            </div>
-        </div>
     </div>
-    <hr class="separator">
 
-    <h3 style="text-align:center; font-size: 0.9rem; border:none; background:none;">VISUALIZACIÓN TÁCTICA</h3>
-    <div style="display: flex; justify-content: center;">
-        <canvas id="radarCanvas" width="300" height="300"></canvas>
-    </div>
     <script src="script.js"></script>
-
 </body>
 
 </html>
