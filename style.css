@@ -1,0 +1,210 @@
+/* 1. IMPORTAR FUENTE TIPO "HUD" MILITAR */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+:root {
+    --primary-color: #00ff41;
+    --bg-color: #050a05;
+    --panel-bg: rgba(0, 20, 0, 0.85);
+    --input-bg: #0a1f0a;
+    --alert-color: #ff3333;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Share Tech Mono', monospace;
+    background-color: var(--bg-color);
+    background-image: 
+        linear-gradient(rgba(0, 20, 0, 0.9), rgba(0, 20, 0, 0.9)),
+        url("https://www.transparenttextures.com/patterns/dark-matter.png");
+    color: var(--primary-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+.container {
+    width: 100%;
+    max-width: 550px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.15);
+    padding: 30px;
+    position: relative;
+}
+.container::before {
+    content: "";
+    position: absolute;
+    top: -2px; left: -2px;
+    width: 20px; height: 20px;
+    border-top: 3px solid var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+}
+.container::after {
+    content: "";
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 20px; height: 20px;
+    border-bottom: 3px solid var(--primary-color);
+    border-right: 3px solid var(--primary-color);
+}
+
+h2 {
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+    text-shadow: 0 0 8px var(--primary-color);
+}
+
+h3 {
+    font-size: 1rem;
+    color: #fff;
+    background: linear-gradient(90deg, rgba(0,255,65,0.2) 0%, rgba(0,0,0,0) 100%);
+    padding: 5px 10px;
+    margin-bottom: 15px;
+    border-left: 3px solid var(--primary-color);
+}
+
+small {
+    display: block;
+    color: #668866;
+    margin-bottom: 10px;
+    font-size: 0.75rem;
+}
+
+.section {
+    margin-bottom: 25px;
+}
+
+.data-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.data-row > div, .data-row > input {
+    flex: 1;
+}
+
+label {
+    display: block;
+    font-size: 0.8rem;
+    color: #88aa88;
+    margin-bottom: 5px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--input-bg);
+    border: 1px solid #1f3a1f;
+    color: white;
+    font-family: inherit;
+    font-size: 1.1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+    background-color: #0f2f0f;
+}
+::placeholder { opacity: 0.3; color: var(--primary-color); }
+
+button {
+    width: 100%;
+    padding: 15px;
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+button:hover {
+    background-color: var(--primary-color);
+    color: black;
+    box-shadow: 0 0 15px var(--primary-color);
+}
+#btnCalcularObs {
+    font-size: 0.75rem;
+    padding: 8px;
+    opacity: 0.8;
+}
+
+#btnFuego {
+    background-color: rgba(0, 255, 65, 0.1);
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+.hidden { display: none; }
+
+#resultado {
+    margin-top: 30px;
+    background-color: rgba(0, 20, 0, 0.9);
+    border: 2px solid var(--primary-color);
+    padding: 20px;
+    text-align: center;
+    position: relative;
+}
+
+.result-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.final-data {
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.final-data span {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1.8rem;
+    text-shadow: 0 0 10px var(--primary-color);
+}
+
+/* SEPARADOR */
+.separator {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    margin: 25px 0;
+}
+
+/* Agrega al final de tu styles.css */
+
+canvas {
+    background-color: #001100;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%; /* Lo hace redondo como un radar clásico */
+    box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.2);
+    margin-top: 15px;
+    background-image: 
+        radial-gradient(var(--primary-color) 1px, transparent 1px),
+        radial-gradient(rgba(0, 255, 65, 0.3) 1px, transparent 1px);
+    background-size: 50px 50px; /* Cuadrícula de fondo */
+    background-position: center;
+}
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}

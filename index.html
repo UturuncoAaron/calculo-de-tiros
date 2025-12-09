@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Tiro Híbrida</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>SISTEMA DE TIRO (HÍBRIDO)</h2>
+
+        <div class="section">
+            <h3>1. Tu Posición (Mortero)</h3>
+            <div class="data-row">
+                <div>
+                    <label>Este (X):</label>
+                    <input type="number" id="mx" placeholder="0000">
+                </div>
+                <div>
+                    <label>Norte (Y):</label>
+                    <input type="number" id="my" placeholder="0000">
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="border: 1px solid #00ff41; padding: 10px;">
+            <h3>2. Coordenadas del Objetivo</h3>
+            <small>Escríbelas manual O usa el Observador abajo</small>
+            <div class="data-row">
+                <div>
+                    <label>Obj Este (Tx):</label>
+                    <input type="number" id="tx" placeholder="Destino X">
+                </div>
+                <div>
+                    <label>Obj Norte (Ty):</label>
+                    <input type="number" id="ty" placeholder="Destino Y">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>3. Datos del Observador (Opcional)</h3>
+            <small>Solo llenar si NO tienes coord. del objetivo</small>
+            <div class="data-row">
+                <input type="number" id="ox" placeholder="Obs X">
+                <input type="number" id="oy" placeholder="Obs Y">
+            </div>
+            <div class="data-row" style="margin-top:5px;">
+                <input type="number" id="distObs" placeholder="Distancia Vis">
+                <input type="number" id="azObs" placeholder="Azimut Vis">
+            </div>
+            <button id="btnCalcularObs" style="margin-top:10px; font-size: 0.8rem; padding: 5px;">CALCULAR COORDENADAS
+                DESDE OBS</button>
+        </div>
+
+        <hr class="separator">
+
+        <button id="btnFuego">¡CALCULAR DATOS DE TIRO!</button>
+
+        <div id="resultado" class="hidden">
+            <h3>SOLUCIÓN DE FUEGO</h3>
+            <div class="result-grid">
+                <p class="final-data">AZIMUT: <span id="resAzimut" class="blink">0</span>°</p>
+                <p class="final-data">DISTANCIA: <span id="resDist">0</span> m</p>
+            </div>
+        </div>
+    </div>
+    <hr class="separator">
+
+    <h3 style="text-align:center; font-size: 0.9rem; border:none; background:none;">VISUALIZACIÓN TÁCTICA</h3>
+    <div style="display: flex; justify-content: center;">
+        <canvas id="radarCanvas" width="300" height="300"></canvas>
+    </div>
+    <script src="script.js"></script>
+
+</body>
+
+</html>
