@@ -1,169 +1,423 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-
 :root {
-    --primary: #00ff41;
-    --bg-dark: #050a05;
-    --panel: rgba(0, 20, 0, 0.9);
-    --input-bg: #0a1f0a;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+    --bg-color: #050505;
+    --panel-bg: #0a0a0a;
+    --border-green: #00ff41;
+    --text-green: #00ff41;
+    --border-yellow: #ffcc00;
+    --text-yellow: #ffcc00;
+    --border-red: #ff3333;
+    --text-red: #ff3333;
+    --border-cyan: #00ffff;
+    --text-cyan: #00ffff;
 }
 
 body {
+    background-color: var(--bg-color);
+    color: var(--text-green);
     font-family: 'Share Tech Mono', monospace;
-    background-color: var(--bg-dark);
-    color: var(--primary);
-    padding: 20px;
-    min-height: 100vh;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), url("https://www.transparenttextures.com/patterns/dark-matter.png");
+    margin: 0;
+    padding: 10px;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* --- HEADER --- */
+header {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
+    border-bottom: 2px solid var(--border-green);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    flex: 0 0 auto;
 }
 
-.container {
-    width: 100%;
-    max-width: 1100px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    /* Mitad y mitad para que el mapa se vea grande */
-    gap: 30px;
-    align-items: start;
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 5px var(--text-green);
 }
 
-/* Columna Izquierda */
-.form-column {
-    background-color: var(--panel);
-    border: 1px solid var(--primary);
-    padding: 25px;
-    box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
-}
-
-/* Selector de Modo */
-.mode-selector {
-    margin-bottom: 20px;
-    text-align: center;
+.top-controls {
+    display: flex;
+    gap: 20px;
 }
 
 select {
-    width: 100%;
-    padding: 10px;
     background: #000;
-    color: var(--primary);
-    border: 1px solid var(--primary);
-    font-family: inherit;
-    font-size: 1rem;
-}
-
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    border-bottom: 1px dashed var(--primary);
-}
-
-h3 {
-    background: rgba(0, 255, 65, 0.1);
+    color: var(--text-yellow);
+    border: 1px solid var(--text-yellow);
     padding: 5px;
-    margin-bottom: 10px;
-    font-size: 1rem;
-    border-left: 3px solid var(--primary);
+    font-family: inherit;
+    font-weight: bold;
 }
 
-/* Inputs */
-.data-row {
+/* --- LAYOUT PRINCIPAL (3 COLUMNAS) --- */
+.grid-container {
+    display: grid;
+    grid-template-columns: 25% 40% 35%;
+    /* Proporciones */
+    gap: 15px;
+    flex: 1;
+    /* Ocupa el resto de la altura */
+    min-height: 0;
+    /* Importante para que el scroll interno funcione */
+}
+
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid #333;
+    padding: 10px;
     display: flex;
+    flex-direction: column;
     gap: 10px;
-    margin-bottom: 10px;
+    height: 100%;
+    overflow-y: auto;
+    /* Scroll si es necesario */
 }
 
-.dms-row {
+/* --- ESTILOS GENERALES DE CAJAS --- */
+.box-section {
+    border: 1px solid #444;
+    padding: 12px 8px 8px 8px;
+    position: relative;
+    margin-top: 5px;
+}
+
+.box-title {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: var(--panel-bg);
+    padding: 0 5px;
+    color: var(--text-green);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.input-row {
     display: flex;
     gap: 5px;
-    margin-bottom: 10px;
+    margin-top: 5px;
 }
-
-/* Para Gr, Min, Seg juntos */
 
 input {
     width: 100%;
-    padding: 10px;
-    background: var(--input-bg);
-    border: 1px solid #1f3a1f;
+    background: #000;
+    border: 1px solid #555;
     color: #fff;
+    padding: 8px;
+    text-align: center;
     font-family: inherit;
     font-size: 1rem;
-    outline: none;
 }
 
 input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+    border-color: var(--border-green);
+    outline: none;
+    box-shadow: 0 0 5px var(--border-green);
 }
 
-/* Botón */
-button {
-    width: 100%;
-    padding: 15px;
-    margin-top: 10px;
-    background: rgba(0, 255, 65, 0.15);
-    border: 1px solid var(--primary);
-    color: var(--primary);
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: 0.2s;
-}
-
-button:hover {
-    background: var(--primary);
-    color: #000;
-}
-
-/* Mapa */
-.radar-column {
-    height: 100%;
-    min-height: 500px;
-    border: 2px solid var(--primary);
-    position: relative;
-}
-
-#map {
-    width: 100%;
-    height: 93.5%;
-    filter: sepia(100%) hue-rotate(50deg) saturate(150%) contrast(1.2);
-}
-
-/* Utilidades */
 .hidden {
     display: none;
 }
 
-.result-grid {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 15px;
-    border-top: 1px dashed var(--primary);
+.dashed-top {
+    border-top: 1px dashed #333;
     padding-top: 10px;
+    margin-top: 10px;
 }
 
-.final-data span {
-    font-size: 1.5rem;
+/* Botones Pequeños */
+.btn-small {
+    width: 100%;
+    background: #002200;
+    border: 1px dashed var(--border-green);
+    color: var(--text-green);
+    cursor: pointer;
+    margin-top: 5px;
+    padding: 5px;
+    font-family: inherit;
+}
+
+.btn-small:hover {
+    background: var(--text-green);
+    color: #000;
+}
+
+/* --- COLUMNA CENTRAL (RESULTADOS) --- */
+.btn-large {
+    width: 100%;
+    background: #003300;
+    color: #fff;
+    border: 2px solid var(--border-green);
+    padding: 12px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-family: inherit;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+}
+
+.btn-large:hover {
+    background: var(--border-green);
+    color: #000;
+}
+
+.display-screen {
+    border: 3px solid var(--border-yellow);
+    padding: 10px;
+    background: #111;
+    text-align: center;
+    flex-grow: 1;
+    /* Crece para llenar espacio */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: inset 0 0 20px rgba(255, 204, 0, 0.1);
+}
+
+.screen-header {
+    background: var(--border-yellow);
+    color: #000;
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding: 2px;
+}
+
+.data-group-main {
+    margin-bottom: 15px;
+    border-bottom: 1px dashed #555;
+    padding-bottom: 10px;
+}
+
+.value-huge {
+    font-size: 4.5rem;
+    font-weight: bold;
+    display: block;
+    line-height: 1;
+    color: var(--text-green);
+    text-shadow: 0 0 10px var(--text-green);
+}
+
+.blink {
+    animation: blinker 2s linear infinite;
+}
+
+.data-grid-secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.data-item {
+    background: #050505;
+    border: 1px solid #333;
+    padding: 5px;
+}
+
+.label {
+    display: block;
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.value-large {
+    font-size: 2rem;
     font-weight: bold;
     display: block;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr;
+.text-yellow {
+    color: var(--text-yellow);
+}
+
+.footer-info {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Panel Correcciones (Rojo) */
+.correction-panel {
+    border: 2px solid var(--border-red);
+    padding: 10px;
+    margin-top: auto;
+    position: relative;
+}
+
+.box-title-red {
+    color: var(--text-red);
+    background: var(--panel-bg);
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    padding: 0 5px;
+    font-weight: bold;
+}
+
+.corr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.input-group {
+    display: flex;
+    gap: 2px;
+}
+
+.input-group select {
+    width: 60%;
+    background: #220000;
+    border: 1px solid var(--border-red);
+    color: var(--text-red);
+}
+
+.input-group input {
+    width: 40%;
+    border-color: var(--border-red);
+}
+
+.btn-red {
+    width: 100%;
+    background: #330000;
+    color: var(--text-red);
+    border: 1px solid var(--border-red);
+    padding: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+}
+
+.btn-red:hover {
+    background: var(--border-red);
+    color: #fff;
+}
+
+/* --- COLUMNA DERECHA (CIAN) --- */
+.panel-right {
+    overflow: hidden;
+    /* Evita scroll en esta columna específica */
+    gap: 15px;
+}
+
+.radar-container {
+    flex: 1;
+    /* Ocupa todo el espacio disponible */
+    min-height: 0;
+    /* Permite encogerse */
+    border: 1px solid var(--border-green);
+    background: radial-gradient(circle, #001100 0%, #000000 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radar-overlay {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.7rem;
+    color: var(--text-green);
+    opacity: 0.7;
+}
+
+canvas {
+    max-width: 98%;
+    max-height: 98%;
+    object-fit: contain;
+}
+
+/* Sección Meteorología (Estilo Comando) */
+.meteo-section {
+    flex: 0 0 auto;
+    /* No crece */
+    border: 1px solid var(--border-cyan);
+    background: #020202;
+    padding: 15px 10px 10px 10px;
+}
+
+.title-cyan {
+    color: #000;
+    background: var(--text-cyan);
+    top: -10px;
+    left: 10px;
+    position: absolute;
+    padding: 0 5px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.meteo-grid-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.input-block {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-block label {
+    font-size: 0.65rem;
+    color: var(--text-cyan);
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+}
+
+.input-cyan {
+    background: #001111;
+    border: 1px solid #005555;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.1rem;
+    padding: 5px;
+    transition: all 0.3s ease;
+}
+
+.input-cyan:focus {
+    border-color: var(--border-cyan);
+    background: #002222;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+}
+
+/* Animaciones */
+@keyframes blinker {
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* RESPONSIVE (MÓVIL) */
+@media (max-width: 900px) {
+    body {
+        height: auto;
+        overflow-y: auto;
     }
 
-    .radar-column {
+    .grid-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel {
+        width: 100%;
+        height: auto;
+    }
+
+    .radar-container {
         height: 350px;
-        order: -1;
+    }
+
+    .value-huge {
+        font-size: 3.5rem;
     }
 }
