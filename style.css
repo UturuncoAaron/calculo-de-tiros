@@ -19,6 +19,9 @@ body {
     padding: 10px;
     height: 100vh;
     overflow: hidden;
+    /* Evita scroll en escritorio */
+    display: flex;
+    flex-direction: column;
 }
 
 /* --- HEADER --- */
@@ -420,4 +423,66 @@ canvas {
     .value-huge {
         font-size: 3.5rem;
     }
+}
+
+/* SELECTOR DE CARGA (Integrado en pantalla negra) */
+.select-carga {
+    width: 100%;
+    background: #000;
+    color: var(--text-yellow);
+    border: none;
+    font-size: 2rem;
+    /* Tamaño grande igual que los números */
+    font-weight: bold;
+    font-family: 'Share Tech Mono', monospace;
+    text-align: center;
+    cursor: pointer;
+    appearance: none;
+    /* Quita la flecha fea por defecto */
+    -webkit-appearance: none;
+}
+
+.select-carga:focus {
+    outline: none;
+    background: #111;
+}
+
+.select-carga option {
+    font-size: 1rem;
+}
+
+/* TABLA DE COMPARACIÓN DE CARGAS */
+.charges-table {
+    margin-top: 15px;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #444;
+    font-size: 0.85rem;
+}
+
+.charge-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 10px;
+    border-bottom: 1px solid #333;
+}
+
+.charge-row.header {
+    background: #222;
+    color: #888;
+    font-weight: bold;
+}
+
+.charge-row.active {
+    background: #222200;
+    /* Fondo amarillo oscuro para la seleccionada */
+    color: var(--text-yellow);
+    font-weight: bold;
+    border: 1px solid var(--text-yellow);
+}
+
+.charge-row span {
+    flex: 1;
+    text-align: center;
 }

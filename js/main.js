@@ -248,3 +248,251 @@ function dibujarRadar(mx, my, tx, ty, ox, oy) {
         ctx.beginPath(); ctx.moveTo(cOx, cOy); ctx.lineTo(cTx, cTy); ctx.stroke(); ctx.setLineDash([]);
     }
 }
+function calcularTargetDesdeObservador() {
+    const mode = document.getElementById('inputMode').value;
+    const dist = parseFloat(document.getElementById('distObs').value);
+    const azInput = parseFloat(document.getElementById('azObs').value);
+    const azUnit = document.getElementById('azObsUnit').value; // 'mils' o 'deg'
+
+    if (isNaN(dist) || isNaN(azInput)) { alert("Faltan datos de visión"); return; }
+
+    let obsX, obsY;
+    if (mode === 'utm') {
+        obsX = parseFloat(document.getElementById('ox').value);
+        obsY = parseFloat(document.getElementById('oy').value);
+    } else {
+        const lat = dmsToDecimal('olat');
+        const lon = dmsToDecimal('olon');
+        if (isNaN(lat)) { alert("Coord Obs inválidas"); return; }
+        const utm = proj4("EPSG:4326", "EPSG:32718", [lon, lat]);
+        obsX = utm[0]; obsY = utm[1];
+    }
+
+    if (isNaN(obsX)) { alert("Falta posición Obs"); return; }
+
+    // --- CORRECCIÓN: Convertir según la unidad elegida ---
+    let azRad = 0;
+    if (azUnit === 'mils') {
+        // De Milésimas (6400) a Radianes
+        azRad = azInput * (2 * Math.PI / 6400);
+    } else {
+        // De Grados (360) a Radianes
+        azRad = azInput * (Math.PI / 180);
+    }
+    // ----------------------------------------------------
+
+    const tx = obsX + (dist * Math.sin(azRad));
+    const ty = obsY + (dist * Math.cos(azRad));
+
+    document.getElementById('tx').value = tx.toFixed(0);
+    document.getElementById('ty').value = ty.toFixed(0);
+
+    // Si estamos en modo DMS, actualizar también los campos Lat/Lon del objetivo
+    if (mode === 'dms') {
+        const geo = proj4("EPSG:32718", "EPSG:4326", [tx, ty]);
+        fillDMS('tlat', geo[1]);
+        fillDMS('tlon', geo[0]);
+    }
+}
+// Variable global para guardar la distancia calculada actual
+let distanciaTiroGlobal = 0;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ... (listeners anteriores) ...
+    document.getElementById('inputMode').addEventListener('change', toggleInputs);
+    document.getElementById('btnFuego').addEventListener('click', calcularYDibujar);
+    document.getElementById('btnCalcularObs').addEventListener('click', calcularTargetDesdeObservador);
+    document.getElementById('btnCorregir').addEventListener('click', aplicarCorreccion);
+
+    // NUEVO: Cuando cambies la carga manualmente, recalcula solo los datos balísticos
+    document.getElementById('sel_carga').addEventListener('change', (e) => {
+        const cargaManual = e.target.value;
+        if (distanciaTiroGlobal > 0 && cargaManual !== '-') {
+            actualizarDatosPorCarga(distanciaTiroGlobal, cargaManual);
+        }
+    });
+
+    const inputsMeteo = document.querySelectorAll('.input-cyan');
+    inputsMeteo.forEach(input => input.addEventListener('input', calcularYDibujar));
+    document.getElementById('tipoGranada').addEventListener('change', calcularYDibujar);
+
+    dibujarRadar(0, 0, 0, 0, NaN, NaN);
+});
+
+// ... (toggleInputs, calcularTargetDesdeObservador, dmsToDecimal IGUALES) ...
+
+function calcularYDibujar() {
+    // ... (Parte 1: Obtener Coordenadas y Topografía - IGUAL QUE ANTES) ...
+    const mode = document.getElementById('inputMode').value;
+    let mx, my, tx, ty;
+    if (mode === 'utm') {
+        mx = parseFloat(document.getElementById('mx').value);
+        my = parseFloat(document.getElementById('my').value);
+        tx = parseFloat(document.getElementById('tx').value);
+        ty = parseFloat(document.getElementById('ty').value);
+    } else {
+        const mLat = dmsToDecimal('mlat'); const mLon = dmsToDecimal('mlon');
+        const mUTM = proj4("EPSG:4326", "EPSG:32718", [mLon, mLat]);
+        mx = mUTM[0]; my = mUTM[1];
+        const tLat = dmsToDecimal('tlat'); const tLon = dmsToDecimal('tlon');
+        const tUTM = proj4("EPSG:4326", "EPSG:32718", [tLon, tLat]);
+        tx = tUTM[0]; ty = tUTM[1];
+    }
+    if (isNaN(mx) || isNaN(tx)) return;
+
+    // Topografía Base
+    const deltaX = tx - mx;
+    const deltaY = ty - my;
+    const distanciaMapa = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    let azRad = Math.atan2(deltaX, deltaY);
+    let azGrados = azRad * (180 / Math.PI);
+    if (azGrados < 0) azGrados += 360;
+    const azMilsBase = (azGrados * 6400) / 360;
+
+    // --- CÁLCULO DE CORRECCIONES (VIENTO/TEMP) ---
+    // Usamos una carga 'dummy' (la 0) solo para obtener factores y corregir distancia
+    const tipoGranada = document.getElementById('tipoGranada').value;
+    const datosBase = calcularBalistica(distanciaMapa, tipoGranada, 0);
+
+    // Recuperar datos meteo
+    const vientoDir = parseFloat(document.getElementById('meteo_dir').value) || 0;
+    const vientoVel = parseFloat(document.getElementById('meteo_vel').value) || 0;
+    const tempAire = parseFloat(document.getElementById('meteo_temp').value) || 15;
+    const difPeso = parseFloat(document.getElementById('meteo_peso').value) || 0;
+
+    // Factores (Si no hay DB completa, usa 0)
+    const fact = datosBase.factores || { v_cola: 0, v_traves: 0, t_aire: 0, peso: 0 };
+
+    // Calcular Viento
+    const angVientoRad = vientoDir * (Math.PI / 180);
+    const angTiroRad = azGrados * (Math.PI / 180);
+    const angRelativo = angVientoRad - angTiroRad;
+    const vCola = vientoVel * Math.cos(angRelativo);
+    const vTraves = vientoVel * Math.sin(angRelativo);
+
+    // Corregir Distancia
+    const corrViento = vCola * fact.v_cola;
+    const corrTemp = (tempAire - 15) * fact.t_aire;
+    const corrPeso = difPeso * fact.peso;
+
+    distanciaTiroGlobal = distanciaMapa - (corrViento + corrTemp + corrPeso); // GUARDAR GLOBAL
+
+    // Corregir Azimut (Deriva)
+    const corrDerivaMils = vTraves * fact.v_traves;
+    const azimutFinal = azMilsBase + corrDerivaMils;
+
+    // Mostrar Azimut y Distancia (Estos no cambian con la carga)
+    document.getElementById('resAzimutMils').textContent = Math.round(azimutFinal).toString().padStart(4, '0');
+    document.getElementById('resAzimutDeg').textContent = `${((azimutFinal * 360) / 6400).toFixed(1)}°`;
+    document.getElementById('resDist').textContent = Math.round(distanciaMapa); // Mostramos la del mapa
+
+    // --- NUEVO: LLENAR TABLA DE CARGAS Y SELECTOR ---
+    llenarOpcionesDeCarga(distanciaTiroGlobal, tipoGranada);
+
+    dibujarRadar(mx, my, tx, ty, parseFloat(document.getElementById('ox').value), parseFloat(document.getElementById('oy').value));
+}
+
+// ... (resto del código igual)
+
+function llenarOpcionesDeCarga(distancia, tipoID) {
+    const BD = ARSENAL[tipoID];
+    const select = document.getElementById('sel_carga');
+    const tablaDiv = document.getElementById('tabla-cargas');
+    const recDiv = document.getElementById('recomendacion-msg'); // Caja del mensaje
+
+    select.innerHTML = "";
+    tablaDiv.innerHTML = `<div class="charge-row header"><span>CARGA</span><span>ELEVACIÓN</span><span>SEGURIDAD</span></div>`;
+    tablaDiv.classList.remove('hidden');
+    recDiv.classList.remove('hidden');
+
+    let mejorCarga = -1;
+    let mejorBuffer = -1;
+    let motivo = "";
+
+    // Barrido de Cargas
+    for (const c in BD.rangos) {
+        if (distancia >= BD.rangos[c].min && distancia <= BD.rangos[c].max) {
+
+            const datos = calcularBalistica(distancia, tipoID, c);
+            if (datos.status === "OK") {
+                const buffer = BD.rangos[c].max - distancia;
+
+                // Agregar al SELECT
+                const option = document.createElement('option');
+                option.value = c;
+                option.text = `CARGA ${c}`;
+                select.appendChild(option);
+
+                // Agregar a la TABLA
+                const row = document.createElement('div');
+                row.className = "charge-row";
+                row.innerHTML = `
+                    <span>CARGA ${c}</span>
+                    <span style="color:#ffff00">${Math.round(datos.elev)}</span>
+                    <span>${Math.round(buffer)}m</span>
+                `;
+                tablaDiv.appendChild(row);
+
+                // LÓGICA DE RECOMENDACIÓN (Explicación para tu papá)
+                if (mejorCarga === -1) {
+                    mejorCarga = c;
+                    mejorBuffer = buffer;
+                    motivo = "Es la carga más baja posible (Menor desgaste).";
+                    if (buffer < 100) motivo += " (PERO ESTÁ AL LÍMITE).";
+                } else {
+                    // Si encontramos una carga mejor (más segura)
+                    if (mejorBuffer < 100 && buffer > mejorBuffer) {
+                        mejorCarga = c;
+                        mejorBuffer = buffer;
+                        motivo = `Mayor margen de seguridad (${Math.round(buffer)}m libres).`;
+                    }
+                }
+            }
+        }
+    }
+
+    // Aplicar Selección y Mostrar Mensaje
+    if (mejorCarga !== -1) {
+        select.value = mejorCarga;
+        actualizarDatosPorCarga(distancia, mejorCarga);
+
+        // Escribir el mensaje en la pantalla
+        recDiv.innerHTML = `> RECOMENDACIÓN: CARGA ${mejorCarga}<br>> MOTIVO: ${motivo}`;
+    } else {
+        select.innerHTML = "<option>FUERA</option>";
+        recDiv.innerHTML = "> ALERTA: OBJETIVO FUERA DE ALCANCE.";
+        recDiv.style.color = "red";
+        recDiv.style.borderColor = "red";
+    }
+}
+
+// ... (resto del código igual)
+
+function actualizarDatosPorCarga(distancia, cargaID) {
+    const tipoGranada = document.getElementById('tipoGranada').value;
+
+    // Forzamos el cálculo balístico con la carga seleccionada manualmente
+    // (Nota: Necesitamos modificar ligeramente calcularBalistica para aceptar carga forzada)
+    const datos = calcularBalistica(distancia, tipoGranada, cargaID);
+
+    // Angulo de Situación (Altura)
+    let altPieza = parseFloat(document.getElementById('alt_pieza').value) || 0;
+    let altObj = parseFloat(document.getElementById('alt_obj').value);
+    if (isNaN(altObj)) altObj = altPieza;
+    const diffAlt = altObj - altPieza;
+    const angSitRad = Math.atan(diffAlt / distancia);
+    const angSitMils = (angSitRad * 6400) / (2 * Math.PI);
+
+    let elevFinal = datos.elev + angSitMils;
+
+    document.getElementById('bal_elev').textContent = Math.round(elevFinal);
+    document.getElementById('bal_time').textContent = datos.tiempo;
+
+    // Resaltar en la tabla la carga activa
+    const filas = document.querySelectorAll('.charge-row');
+    filas.forEach(f => f.classList.remove('active'));
+    // Buscar la fila que contiene el texto de la carga y activarla (simple visual)
+    for (let f of filas) {
+        if (f.textContent.includes(`CARGA ${cargaID}`)) f.classList.add('active');
+    }
+}
