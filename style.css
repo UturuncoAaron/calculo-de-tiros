@@ -1,30 +1,33 @@
 :root {
     --bg-color: #050505;
-    --panel-bg: #0a0a0a;
-    --border-green: #00ff41;
-    --text-green: #00ff41;
-    --border-yellow: #ffcc00;
-    --text-yellow: #ffcc00;
-    --border-red: #ff3333;
-    --text-red: #ff3333;
-    --border-cyan: #00ffff;
-    --text-cyan: #00ffff;
+    --panel-bg: #111111;
+    --text-green: #4dff88;
+    --border-green: #1f3a26;
+    --text-yellow: #ffb300;
+    --border-yellow: #4a3500;
+    --text-red: #ff5555;
+    --border-red: #3a1f1f;
+    --text-cyan: #00bcd4;
+    --border-cyan: #003b42;
+    --border-subtle: #222222;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
     background-color: var(--bg-color);
     color: var(--text-green);
-    font-family: 'Share Tech Mono', monospace;
+    font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 10px;
     height: 100vh;
     overflow: hidden;
-    /* Evita scroll en escritorio */
     display: flex;
     flex-direction: column;
 }
 
-/* --- HEADER --- */
 header {
     display: flex;
     justify-content: space-between;
@@ -40,6 +43,7 @@ header h1 {
     font-size: 1.5rem;
     letter-spacing: 2px;
     text-shadow: 0 0 5px var(--text-green);
+    font-family: 'Share Tech Mono', monospace;
 }
 
 .top-controls {
@@ -47,101 +51,113 @@ header h1 {
     gap: 20px;
 }
 
+select, input, button {
+    font-family: inherit;
+}
+
 select {
     background: #000;
     color: var(--text-yellow);
     border: 1px solid var(--text-yellow);
     padding: 5px;
-    font-family: inherit;
     font-weight: bold;
 }
 
-/* --- LAYOUT PRINCIPAL (3 COLUMNAS) --- */
 .grid-container {
     display: grid;
     grid-template-columns: 25% 40% 35%;
-    /* Proporciones */
-    gap: 15px;
+    gap: 20px;
     flex: 1;
-    /* Ocupa el resto de la altura */
     min-height: 0;
-    /* Importante para que el scroll interno funcione */
+    padding: 5px;
 }
 
 .panel {
     background: var(--panel-bg);
-    border: 1px solid #333;
-    padding: 10px;
+    border: 1px solid var(--border-subtle);
+    padding: 15px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
     height: 100%;
     overflow-y: auto;
-    /* Scroll si es necesario */
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-/* --- ESTILOS GENERALES DE CAJAS --- */
+.panel-right {
+    overflow: hidden;
+}
+
 .box-section {
-    border: 1px solid #444;
-    padding: 12px 8px 8px 8px;
+    border: 1px solid var(--border-subtle);
+    padding: 15px 10px 10px 10px;
     position: relative;
-    margin-top: 5px;
+    background: rgba(255,255,255, 0.02);
+    border-radius: 4px;
 }
 
-.box-title {
+.box-title, .box-title-red, .title-cyan {
     position: absolute;
     top: -10px;
     left: 10px;
-    background: var(--panel-bg);
     padding: 0 5px;
-    color: var(--text-green);
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.box-title {
+    background: var(--panel-bg);
+    color: var(--text-green);
 }
 
 .input-row {
     display: flex;
-    gap: 5px;
+    gap: 10px;
     margin-top: 5px;
 }
 
 input {
     width: 100%;
     background: #000;
-    border: 1px solid #555;
+    border: none;
+    border-bottom: 2px solid #333;
     color: #fff;
     padding: 8px;
     text-align: center;
-    font-family: inherit;
     font-size: 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.3s ease;
 }
 
 input:focus {
-    border-color: var(--border-green);
+    border-bottom-color: var(--text-green);
+    background: #0a0a0a;
     outline: none;
-    box-shadow: 0 0 5px var(--border-green);
-}
-
-.hidden {
-    display: none;
 }
 
 .dashed-top {
     border-top: 1px dashed #333;
-    padding-top: 10px;
+    padding-top: 15px;
     margin-top: 10px;
 }
 
-/* Botones Pequeños */
+.btn-small, .btn-large, .btn-red {
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    border: none;
+}
+
 .btn-small {
     width: 100%;
     background: #002200;
     border: 1px dashed var(--border-green);
     color: var(--text-green);
-    cursor: pointer;
-    margin-top: 5px;
-    padding: 5px;
-    font-family: inherit;
+    margin-top: 10px;
+    padding: 8px;
 }
 
 .btn-small:hover {
@@ -149,60 +165,88 @@ input:focus {
     color: #000;
 }
 
-/* --- COLUMNA CENTRAL (RESULTADOS) --- */
 .btn-large {
     width: 100%;
-    background: #003300;
+    background: linear-gradient(to bottom, #004400, #003300);
     color: #fff;
-    border: 2px solid var(--border-green);
     padding: 12px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    font-weight: bold;
+    font-size: 1.1rem;
     letter-spacing: 1px;
-    font-family: inherit;
-    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+    box-shadow: 0 4px 0 #002200;
+    border-radius: 4px;
+    margin-top: 10px;
 }
 
 .btn-large:hover {
-    background: var(--border-green);
-    color: #000;
+    background: #005500;
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #002200;
+}
+
+.aiming-config {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    background: #080808;
+    padding: 10px;
+    border: 1px solid #333;
+}
+
+.input-group-small {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.input-group-small label {
+    font-size: 0.6rem;
+    color: #aaa;
+    margin-bottom: 4px;
+}
+
+.input-group-small input {
+    background: #000;
+    border: 1px solid #444;
 }
 
 .display-screen {
-    border: 3px solid var(--border-yellow);
-    padding: 10px;
-    background: #111;
+    border: 1px solid var(--border-yellow);
+    padding: 15px;
+    background: #080808;
     text-align: center;
     flex-grow: 1;
-    /* Crece para llenar espacio */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    box-shadow: inset 0 0 20px rgba(255, 204, 0, 0.1);
+    position: relative;
 }
 
 .screen-header {
-    background: var(--border-yellow);
+    background: var(--text-yellow);
     color: #000;
     font-weight: bold;
-    margin-bottom: 10px;
-    padding: 2px;
+    margin: -15px -15px 15px -15px;
+    padding: 5px;
+    font-size: 0.9rem;
 }
 
 .data-group-main {
-    margin-bottom: 15px;
-    border-bottom: 1px dashed #555;
-    padding-bottom: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed #333;
+    padding-bottom: 15px;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .value-huge {
     font-size: 4.5rem;
-    font-weight: bold;
-    display: block;
     line-height: 1;
     color: var(--text-green);
-    text-shadow: 0 0 10px var(--text-green);
+    text-shadow: 0 0 15px rgba(77, 255, 136, 0.4);
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: bold;
+    display: block;
 }
 
 .blink {
@@ -210,15 +254,16 @@ input:focus {
 }
 
 .data-grid-secondary {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
 }
 
-.data-item {
-    background: #050505;
-    border: 1px solid #333;
-    padding: 5px;
+.data-grid-secondary .data-item {
+    width: 60%;
+    border: 1px solid var(--text-yellow);
+    background: #000;
+    padding: 10px;
 }
 
 .label {
@@ -226,15 +271,90 @@ input:focus {
     font-size: 0.7rem;
     color: #888;
     text-transform: uppercase;
+    font-weight: 600;
 }
 
-.value-large {
-    font-size: 2rem;
+.text-yellow { color: var(--text-yellow); }
+
+.select-carga {
+    width: 100%;
+    background: #000;
+    color: var(--text-yellow);
+    border: none;
+    font-size: 1.8rem;
+    text-align: center;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: 'Share Tech Mono', monospace;
     font-weight: bold;
-    display: block;
+    cursor: pointer;
 }
 
-.text-yellow {
+.select-carga:focus {
+    outline: none;
+}
+
+.select-carga option {
+    font-size: 1rem;
+}
+
+.command-table-container {
+    margin-top: 20px;
+    background: rgba(0, 20, 0, 0.6);
+    border: 1px solid var(--text-green);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cmd-header {
+    background: var(--text-green);
+    color: #000;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 6px;
+    text-transform: uppercase;
+}
+
+.cmd-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid #1f3a26;
+}
+
+.cmd-column {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1f3a26;
+}
+
+.cmd-column:last-child {
+    border-right: none;
+}
+
+.cmd-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 2px;
+}
+
+.cmd-cell.head {
+    color: #aaa;
+    font-size: 0.6rem;
+    background: rgba(0,0,0,0.3);
+    padding-bottom: 2px;
+    font-weight: 600;
+}
+
+.cmd-cell.val {
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.3rem;
+    padding-top: 2px;
+}
+
+.cmd-cell.val.text-yellow {
     color: var(--text-yellow);
 }
 
@@ -244,12 +364,12 @@ input:focus {
     color: #666;
 }
 
-/* Panel Correcciones (Rojo) */
 .correction-panel {
-    border: 2px solid var(--border-red);
-    padding: 10px;
+    border: 1px solid var(--border-red);
+    padding: 15px;
     margin-top: auto;
     position: relative;
+    background: rgba(40, 0, 0, 0.1);
 }
 
 .box-title-red {
@@ -260,13 +380,14 @@ input:focus {
     left: 10px;
     padding: 0 5px;
     font-weight: bold;
+    font-size: 0.85rem;
 }
 
 .corr-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 5px;
+    gap: 15px;
+    margin-top: 10px;
 }
 
 .input-group {
@@ -286,16 +407,24 @@ input:focus {
     border-color: var(--border-red);
 }
 
+.input-full-width {
+    width: 100%;
+    background: #220000;
+    border: 1px solid var(--border-red);
+    color: var(--text-red);
+    padding: 5px;
+    font-weight: bold;
+    text-align: center;
+}
+
 .btn-red {
     width: 100%;
     background: #330000;
     color: var(--text-red);
     border: 1px solid var(--border-red);
-    padding: 8px;
-    margin-top: 10px;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: bold;
+    padding: 10px;
+    margin-top: 15px;
+    text-transform: uppercase;
 }
 
 .btn-red:hover {
@@ -303,18 +432,9 @@ input:focus {
     color: #fff;
 }
 
-/* --- COLUMNA DERECHA (CIAN) --- */
-.panel-right {
-    overflow: hidden;
-    /* Evita scroll en esta columna específica */
-    gap: 15px;
-}
-
 .radar-container {
     flex: 1;
-    /* Ocupa todo el espacio disponible */
     min-height: 0;
-    /* Permite encogerse */
     border: 1px solid var(--border-green);
     background: radial-gradient(circle, #001100 0%, #000000 100%);
     position: relative;
@@ -338,30 +458,30 @@ canvas {
     object-fit: contain;
 }
 
-/* Sección Meteorología (Estilo Comando) */
 .meteo-section {
     flex: 0 0 auto;
-    /* No crece */
     border: 1px solid var(--border-cyan);
     background: #020202;
-    padding: 15px 10px 10px 10px;
+    padding: 20px 10px 10px 10px;
+    position: relative;
+    margin-top: 15px;
 }
 
 .title-cyan {
     color: #000;
     background: var(--text-cyan);
+    position: absolute;
     top: -10px;
     left: 10px;
-    position: absolute;
     padding: 0 5px;
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .meteo-grid-inputs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 10px;
 }
 
 .input-block {
@@ -381,108 +501,153 @@ canvas {
     border: 1px solid #005555;
     color: #fff;
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1rem;
     padding: 5px;
-    transition: all 0.3s ease;
+    font-family: 'Share Tech Mono', monospace;
 }
 
 .input-cyan:focus {
     border-color: var(--border-cyan);
     background: #002222;
-    box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
 }
 
-/* Animaciones */
+.excel-box {
+    margin-top: 25px;
+    border: 1px solid var(--text-yellow);
+    background: #080808;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.excel-row {
+    display: flex;
+    border-bottom: 1px solid #222;
+}
+
+.excel-row:last-child {
+    border-bottom: none;
+}
+
+.excel-label {
+    width: 65%;
+    padding: 8px;
+    border-right: 1px solid #222;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    color: #aaa;
+}
+
+.excel-value {
+    width: 35%;
+    padding: 8px;
+    text-align: center;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    color: #fff;
+}
+
+.yellow-bg { background: transparent; }
+.blue-bg { background: transparent; }
+.salmon-bg { background: transparent; color: var(--text-green); }
+.white-bg { background: transparent; }
+
+.blue-bg.text-yellow { color: var(--text-yellow); }
+.font-bold { font-weight: 900; }
+
+.hidden {
+    display: none !important;
+}
+.charges-table {
+    margin-top: 15px;
+    width: 100%;
+    border: 1px solid #333;
+    background: rgba(0,0,0,0.5); /* Fondo oscuro semitransparente */
+    font-size: 0.9rem;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Usamos GRID para que las columnas queden perfectas */
+.charge-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* 3 columnas iguales */
+    padding: 8px 5px;
+    border-bottom: 1px solid #222;
+    text-align: center;
+    align-items: center;
+}
+
+/* Estilo de la Cabecera */
+.charge-row.header {
+    background: #002200; /* Verde muy oscuro */
+    color: var(--text-green);
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--border-green);
+}
+
+/* Estilo de las Filas Normales */
+.charge-row:not(.header) {
+    color: #bbb;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+/* Efecto al pasar el mouse */
+.charge-row:not(.header):hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Fila Activa (La carga seleccionada) */
+.charge-row.active {
+    background: rgba(255, 204, 0, 0.15); /* Fondo amarillo muy suave */
+    color: var(--text-yellow);
+    border: 1px solid var(--text-yellow);
+    font-weight: bold;
+}
+
+/* Caja de Recomendación (El mensaje verde de arriba) */
+.rec-box {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    padding: 10px;
+    border: 1px dashed var(--text-green);
+    background: rgba(0, 50, 0, 0.2);
+    color: var(--text-green);
+    font-size: 0.9rem;
+    text-align: center;
+    border-radius: 4px;
+    line-height: 1.5;
+}
+
 @keyframes blinker {
-    50% {
-        opacity: 0.7;
-    }
+    50% { opacity: 0.7; }
 }
 
-/* RESPONSIVE (MÓVIL) */
 @media (max-width: 900px) {
     body {
         height: auto;
         overflow-y: auto;
     }
-
     .grid-container {
         display: flex;
         flex-direction: column;
     }
-
     .panel {
         width: 100%;
         height: auto;
     }
-
     .radar-container {
         height: 350px;
     }
-
     .value-huge {
         font-size: 3.5rem;
     }
-}
-
-/* SELECTOR DE CARGA (Integrado en pantalla negra) */
-.select-carga {
-    width: 100%;
-    background: #000;
-    color: var(--text-yellow);
-    border: none;
-    font-size: 2rem;
-    /* Tamaño grande igual que los números */
-    font-weight: bold;
-    font-family: 'Share Tech Mono', monospace;
-    text-align: center;
-    cursor: pointer;
-    appearance: none;
-    /* Quita la flecha fea por defecto */
-    -webkit-appearance: none;
-}
-
-.select-carga:focus {
-    outline: none;
-    background: #111;
-}
-
-.select-carga option {
-    font-size: 1rem;
-}
-
-/* TABLA DE COMPARACIÓN DE CARGAS */
-.charges-table {
-    margin-top: 15px;
-    width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-    border: 1px solid #444;
-    font-size: 0.85rem;
-}
-
-.charge-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 10px;
-    border-bottom: 1px solid #333;
-}
-
-.charge-row.header {
-    background: #222;
-    color: #888;
-    font-weight: bold;
-}
-
-.charge-row.active {
-    background: #222200;
-    /* Fondo amarillo oscuro para la seleccionada */
-    color: var(--text-yellow);
-    font-weight: bold;
-    border: 1px solid var(--text-yellow);
-}
-
-.charge-row span {
-    flex: 1;
-    text-align: center;
 }

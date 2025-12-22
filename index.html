@@ -3,13 +3,17 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCT - FDC MASTER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCT - SISTEMA DE CONTROL DE TIRO (FDC)</title>
 
-    <script src="lib/proj4.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
 </head>
 
 <body>
@@ -17,19 +21,18 @@
     <header>
         <h1>SCT - SISTEMA DE CONTROL DE TIRO (FDC)</h1>
         <div class="top-controls">
-            <div>
+            <div class="control-group">
                 <label>COORDENADAS:</label>
                 <select id="inputMode">
                     <option value="utm">UTM (METROS)</option>
-                    <option value="dms">GRADOS MINUTOS</option>
+                    <option value="dms">GEOGRÁFICAS (DMS)</option>
                 </select>
             </div>
-            <div>
+            <div class="control-group">
                 <label>MUNICIÓN:</label>
                 <select id="tipoGranada">
                     <option value="W87">CHINA - W87 (81mm)</option>
                     <option value="M43">USA - M43A1 (81mm)</option>
-                    <option value="O832">RUSIA - O-832 (82mm)</option>
                 </select>
             </div>
         </div>
@@ -41,11 +44,11 @@
 
             <div class="box-section">
                 <div class="box-title">1. POSICIÓN MORTERO (M)</div>
-                <div id="mortero-utm" class="input-row">
+                <div class="utm-group input-row">
                     <input type="number" id="mx" placeholder="Este (X)">
                     <input type="number" id="my" placeholder="Norte (Y)">
                 </div>
-                <div id="mortero-dms" class="hidden">
+                <div class="dms-group hidden">
                     <div class="input-row">
                         <input type="number" id="mlat_d" placeholder="Lat Gr"><input type="number" id="mlat_m"
                             placeholder="Min"><input type="number" id="mlat_s" placeholder="Seg">
@@ -55,21 +58,19 @@
                             placeholder="Min"><input type="number" id="mlon_s" placeholder="Seg">
                     </div>
                 </div>
-
-                <div class="input-row">
-                    <label style="color:#00ffff;">Alt. Pieza:</label>
-                    <input type="number" id="alt_pieza" placeholder="Metros"
-                        style="color:#00ffff; border-color:#00ffff;">
+                <div class="input-row dashed-top">
+                    <div class="label" style="align-self: center; width: 40px;">Alt. Pieza:</div>
+                    <input type="number" id="alt_pieza" placeholder="Metros">
                 </div>
             </div>
 
             <div class="box-section">
                 <div class="box-title">2. POSICIÓN OBJETIVO (T)</div>
-                <div id="target-utm" class="input-row">
+                <div class="utm-group input-row">
                     <input type="number" id="tx" placeholder="Este (X)">
                     <input type="number" id="ty" placeholder="Norte (Y)">
                 </div>
-                <div id="target-dms" class="hidden">
+                <div class="dms-group hidden">
                     <div class="input-row">
                         <input type="number" id="tlat_d" placeholder="Lat Gr"><input type="number" id="tlat_m"
                             placeholder="Min"><input type="number" id="tlat_s" placeholder="Seg">
@@ -79,19 +80,20 @@
                             placeholder="Min"><input type="number" id="tlon_s" placeholder="Seg">
                     </div>
                 </div>
-
-                <div class="input-row">
-                    <label style="color:#00ffff;">Alt. Objetivo:</label>
-                    <input type="number" id="alt_obj" placeholder="Metros" style="color:#00ffff; border-color:#00ffff;">
+                <div class="input-row dashed-top">
+                    <div class="label" style="align-self: center; width: 40px;">Alt. Obj:</div>
+                    <input type="number" id="alt_obj" placeholder="Metros">
                 </div>
             </div>
 
             <div class="box-section obs-box">
                 <div class="box-title">3. OBSERVADOR (Opcional)</div>
+
                 <div id="obs-utm" class="input-row">
                     <input type="number" id="ox" placeholder="Obs Este">
                     <input type="number" id="oy" placeholder="Obs Norte">
                 </div>
+
                 <div id="obs-dms" class="hidden">
                     <div class="input-row">
                         <input type="number" id="olat_d" placeholder="Lat Gr"><input type="number" id="olat_m"
@@ -105,22 +107,55 @@
 
                 <div class="input-row dashed-top">
                     <input type="number" id="distObs" placeholder="Distancia (m)" style="flex: 1;">
-
                     <div style="display: flex; flex: 1; gap: 2px;">
                         <input type="number" id="azObs" placeholder="Azimut" style="width: 60%;">
-                        <select id="azObsUnit"
-                            style="width: 40%; padding: 0; font-size: 0.8rem; background: #002200; color: #00ff41; border: 1px solid #00ff41;">
+                        <select id="azObsUnit" style="width: 40%; font-size: 0.8rem; padding: 0;">
                             <option value="mils">MILS</option>
                             <option value="deg">GRAD</option>
                         </select>
                     </div>
                 </div>
                 <button id="btnCalcularObs" class="btn-small">CALCULAR POS. OBJETIVO</button>
-            </div>
 
+                <div id="mini-resumen" class="excel-box hidden">
+
+                    <div class="excel-row">
+                        <div class="excel-label blue-bg text-yellow">Dir. Tiro Recomendada</div>
+                        <div class="excel-value blue-bg text-yellow" id="excel_dir_rec">-</div>
+                    </div>
+
+                    <div class="excel-row">
+                        <div class="excel-label salmon-bg">Acimut magnético</div>
+                        <div class="excel-value salmon-bg" id="excel_az_mag">-</div>
+                    </div>
+
+                    <div class="excel-row">
+                        <div class="excel-label salmon-bg">Diferencia de Deriva</div>
+                        <div class="excel-value salmon-bg" id="excel_diff_deriva">-</div>
+                    </div>
+
+                    <div class="excel-row">
+                        <div class="excel-label salmon-bg font-bold">DISTANCIA</div>
+                        <div class="excel-value salmon-bg font-bold" id="excel_dist">-</div>
+                    </div>
+
+                </div>
+
+            </div>
         </div>
 
         <div class="panel panel-center">
+
+            <div class="aiming-config">
+                <div class="input-group-small">
+                    <label>ORIENT. INICIAL (MILS)</label>
+                    <input type="number" id="orientacion_base" placeholder="Ej: 6400" value="6400">
+                </div>
+                <div class="input-group-small">
+                    <label>DECLINACIÓN MAG. (MILS)</label>
+                    <input type="number" id="declinacion_mag" placeholder="+/- (Diferencia)" value="0">
+                </div>
+            </div>
 
             <button id="btnFuego" class="btn-large">¡CALCULAR DATOS DE TIRO!</button>
 
@@ -129,127 +164,171 @@
 
                 <div class="data-group-main">
                     <div class="data-item">
-                        <span class="label">AZIMUT (MILS 6400)</span>
+                        <span class="label">AZIMUT DE TIRO (MILS)</span>
                         <span id="resAzimutMils" class="value-huge blink">0000</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #888; margin-top:5px;">
+                        MAGNÉTICO: <span id="resAzimutMag" style="color: #fff; font-weight:bold;">0000</span>
                     </div>
                 </div>
 
                 <div class="data-grid-secondary">
-                    <div class="data-item" style="border-color: var(--text-yellow);">
+                    <div class="data-item">
                         <span class="label text-yellow">CARGA (ELEGIR)</span>
                         <select id="sel_carga" class="select-carga">
                             <option value="-">-</option>
                         </select>
                     </div>
+                </div>
 
-                    <div class="data-item">
-                        <span class="label">ELEVACIÓN</span>
-                        <span id="bal_elev" class="value-large text-yellow">0000</span>
+                <div class="command-table-container">
+
+                    <div class="cmd-header" style="background: #1a1a1a; color: #888; border-bottom: 1px solid #333;">
+                        DATOS TOPOGRÁFICOS (PUNTERÍA)
                     </div>
-                    <div class="data-item">
-                        <span class="label">TIEMPO (s)</span>
-                        <span id="bal_time" class="value-large">00.0</span>
+                    <div class="cmd-grid"
+                        style="grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid var(--border-green);">
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">AZIMUT MAGN.</div>
+                            <div class="cmd-cell val" id="topo_az" style="color: #fff;">-</div>
+                        </div>
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">DISTANCIA (m)</div>
+                            <div class="cmd-cell val" id="topo_dist" style="color: #fff;">-</div>
+                        </div>
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">ALTITUD (+/-)</div>
+                            <div class="cmd-cell val" id="topo_alt" style="color: #fff;">-</div>
+                        </div>
                     </div>
-                    <div class="data-item">
-                        <span class="label">DISTANCIA (m)</span>
-                        <span id="resDist" class="value-large">0</span>
+
+                    <div class="cmd-header">COMANDOS DE TIRO (PARA EL CAÑÓN)</div>
+                    <div class="cmd-grid">
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">ORIENT. INIC</div>
+                            <div class="cmd-cell val" id="cmd_orient">-</div>
+                        </div>
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">DERIVA (AZ)</div>
+                            <div class="cmd-cell val" id="cmd_deriva">-</div>
+                        </div>
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">ANG. ELEV</div>
+                            <div class="cmd-cell val text-yellow" id="cmd_elev">-</div>
+                        </div>
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">ALCANCE</div>
+                            <div class="cmd-cell val text-yellow" id="cmd_dist">-</div>
+                        </div>
+                        <div class="cmd-column">
+                            <div class="cmd-cell head">T. VUELO</div>
+                            <div class="cmd-cell val" id="cmd_time">-</div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="recomendacion-msg" class="rec-box hidden">
+                <div id="recomendacion-msg" class="rec-box hidden"
+                    style="margin-top: 10px; font-weight:bold; font-size:0.9rem; border:1px dashed; padding:5px;"></div>
+                <div id="tabla-cargas" class="charges-table hidden"></div>
+                <div class="hidden">
+                    <span id="resAzimutDeg">0.0°</span>
+                    <span id="resDist">0</span>
+                    <span id="bal_elev">0</span>
+                    <span id="bal_time">0</span>
                 </div>
-
-                <div id="tabla-cargas" class="charges-table hidden">
-                    <div class="charge-row header">
-                        <span>CARGA</span>
-                        <span>ELEVACIÓN</span>
-                        <span>SEGURIDAD</span>
-                    </div>
-                </div>
-
-                <div class="footer-info">Azimut en grados: <span id="resAzimutDeg">0.0°</span></div>
             </div>
 
             <div id="correcciones" class="correction-panel">
-                <div class="box-title-red">CORRECCIONES (REGLAJE)</div>
-                <div class="corr-grid">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #550000; padding-bottom: 5px;">
+                    <div class="box-title-red" style="position: static; margin: 0;">REGLAJE</div>
+                    <select id="metodo_reglaje" onchange="toggleMetodoReglaje()"
+                        style="background: #000; color: #ff3333; border: 1px solid #ff3333; font-weight: bold; padding: 2px;">
+                        <option value="apreciacion">1. APRECIACIÓN</option>
+                        <option value="medicion">2. MEDICIÓN</option>
+                    </select>
+                </div>
+
+                <div id="inputs_apreciacion" class="corr-grid">
                     <div>
-                        <label>DESVIACIÓN (MILS)</label>
+                        <label>DESVIACIÓN (L/R)</label>
                         <div class="input-group">
-                            <select id="corr_dir">
-                                <option value="right">Der (R)</option>
-                                <option value="left">Izq (L)</option>
+                            <select id="corr_dir" style="width: 35%;">
+                                <option value="right">Der</option>
+                                <option value="left">Izq</option>
                             </select>
-                            <input type="number" id="corr_mils" placeholder="Mils">
+                            <input type="number" id="corr_lat_val" placeholder="0" style="width: 35%;">
+                            <select id="corr_lat_unit" style="width: 30%; background: #222; color: #fff;">
+                                <option value="mils">MILS</option>
+                                <option value="m">MTS</option>
+                            </select>
                         </div>
                     </div>
                     <div>
-                        <label>ALCANCE (METROS)</label>
+                        <label>ALCANCE (+/-)</label>
                         <div class="input-group">
-                            <select id="corr_range">
+                            <select id="corr_range" style="width: 40%;">
                                 <option value="over">Largo (+)</option>
                                 <option value="short">Corto (-)</option>
                             </select>
-                            <input type="number" id="corr_metros" placeholder="Metros">
+                            <input type="number" id="corr_metros" placeholder="Metros" style="width: 60%;">
                         </div>
                     </div>
                 </div>
+
+                <div id="inputs_medicion" class="corr-grid hidden">
+                    <div><label>AZIMUT IMPACTO (MILS)</label><input type="number" id="impacto_az"
+                            placeholder="Mils (Brújula)" class="input-full-width"></div>
+                    <div><label>DISTANCIA IMPACTO (m)</label><input type="number" id="impacto_dist"
+                            placeholder="Metros (Telémetro)" class="input-full-width"></div>
+                </div>
+
                 <button id="btnCorregir" class="btn-red">APLICAR CORRECCIÓN</button>
             </div>
-
         </div>
-        <div class="panel panel-right">
 
+        <div class="panel panel-right">
             <div class="radar-container">
-                <canvas id="radarCanvas" width="400" height="400"></canvas>
+                <canvas id="radarCanvas" width="300" height="300"></canvas>
                 <div class="radar-overlay">RADAR DE TIRO</div>
             </div>
 
-            <div class="box-section meteo-section">
-                <div class="box-title title-cyan">DATOS ATMOSFÉRICOS</div>
-
+            <div class="meteo-section">
+                <div class="title-cyan">DATOS ATMOSFÉRICOS</div>
                 <div class="meteo-grid-inputs">
-
                     <div class="input-block">
                         <label>VIENTO (DIR°)</label>
-                        <input type="number" id="meteo_dir" placeholder="0" class="input-cyan">
+                        <input type="number" id="meteo_dir" class="input-cyan" placeholder="0-360">
                     </div>
-
                     <div class="input-block">
                         <label>VELOC. (m/s)</label>
-                        <input type="number" id="meteo_vel" placeholder="0" class="input-cyan">
+                        <input type="number" id="meteo_vel" class="input-cyan" placeholder="m/s">
                     </div>
-
                     <div class="input-block">
                         <label>TEMP. AIRE (°C)</label>
-                        <input type="number" id="meteo_temp" value="15" class="input-cyan">
+                        <input type="number" id="meteo_temp" class="input-cyan" value="15">
                     </div>
-
                     <div class="input-block">
                         <label>PRESIÓN (mmHg)</label>
-                        <input type="number" id="meteo_presion" value="750" class="input-cyan">
+                        <input type="number" id="meteo_presion" class="input-cyan" value="750">
                     </div>
-
                     <div class="input-block">
                         <label>TEMP. CARGA (°C)</label>
-                        <input type="number" id="meteo_temp_carga" value="15" class="input-cyan">
+                        <input type="number" id="meteo_temp_carga" class="input-cyan" value="15">
                     </div>
-
                     <div class="input-block">
                         <label>DIF. PESO (+/-)</label>
-                        <input type="number" id="meteo_peso" value="0" class="input-cyan">
+                        <input type="number" id="meteo_peso" class="input-cyan" value="0">
                     </div>
-
                 </div>
             </div>
-
         </div>
-
     </div>
 
     <script src="js/database.js"></script>
     <script src="js/balistica.js"></script>
     <script src="js/main.js"></script>
+
 </body>
 
 </html>
