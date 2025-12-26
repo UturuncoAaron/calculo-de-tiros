@@ -4,15 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCT - SISTEMA DE CONTROL DE TIRO (FDC)</title>
-
+    <title>SCT - SISTEMA DE CONTROL DE TIRO</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Share+Tech+Mono&display=swap"
         rel="stylesheet">
-
     <link rel="stylesheet" href="style.css">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
 </head>
 
@@ -33,6 +30,7 @@
                 <select id="tipoGranada">
                     <option value="W87">CHINA - W87 (81mm)</option>
                     <option value="M43">USA - M43A1 (81mm)</option>
+                    <option value="HE_M1">HE - M1 (Ejemplo)</option>
                 </select>
             </div>
         </div>
@@ -118,27 +116,22 @@
                 <button id="btnCalcularObs" class="btn-small">CALCULAR POS. OBJETIVO</button>
 
                 <div id="mini-resumen" class="excel-box hidden">
-
                     <div class="excel-row">
                         <div class="excel-label blue-bg text-yellow">Dir. Tiro Recomendada</div>
                         <div class="excel-value blue-bg text-yellow" id="excel_dir_rec">-</div>
                     </div>
-
                     <div class="excel-row">
                         <div class="excel-label salmon-bg">Acimut magnético</div>
                         <div class="excel-value salmon-bg" id="excel_az_mag">-</div>
                     </div>
-
                     <div class="excel-row">
                         <div class="excel-label salmon-bg">Diferencia de Deriva</div>
                         <div class="excel-value salmon-bg" id="excel_diff_deriva">-</div>
                     </div>
-
                     <div class="excel-row">
                         <div class="excel-label salmon-bg font-bold">DISTANCIA</div>
                         <div class="excel-value salmon-bg font-bold" id="excel_dist">-</div>
                     </div>
-
                 </div>
 
             </div>
@@ -146,14 +139,39 @@
 
         <div class="panel panel-center">
 
-            <div class="aiming-config">
-                <div class="input-group-small">
-                    <label>ORIENT. INICIAL (MILS)</label>
-                    <input type="number" id="orientacion_base" placeholder="Ej: 6400" value="6400">
+            <div class="tactical-header-box">
+                <div class="th-row border-bottom">
+                    <div class="th-group">
+                        <span class="th-label">FECHA</span>
+                        <input type="date" id="fecha_tiro" class="th-input">
+                    </div>
+                    <div class="th-group">
+                        <span class="th-label text-yellow">VARIACIÓN (CALC.)</span>
+                        <input type="number" id="input_variacion" class="th-input text-yellow bold" value="0.00"
+                            step="0.01" readonly style="background: rgba(255, 179, 0, 0.1);">
+                    </div>
                 </div>
-                <div class="input-group-small">
-                    <label>DECLINACIÓN MAG. (MILS)</label>
-                    <input type="number" id="declinacion_mag" placeholder="+/- (Diferencia)" value="0">
+
+                <div class="th-row">
+                    <div class="th-group border-right" style="flex: 2;">
+                        <span class="th-label">CONVERG. GRILLA</span>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            <input type="number" id="decl_grados" class="th-input-small" placeholder="00" value="0">
+                            <span class="unit">°</span>
+                            <input type="number" id="decl_minutos" class="th-input-small" placeholder="00" value="0">
+                            <span class="unit">'</span>
+                        </div>
+                    </div>
+
+                    <div class="th-group border-right">
+                        <span class="th-label">ZONA UTM</span>
+                        <input type="number" id="zona_utm" class="th-input" value="18">
+                    </div>
+
+                    <div class="th-group">
+                        <span class="th-label">ORIENT. INICIAL</span>
+                        <input type="number" id="orientacion_base" class="th-input" value="0">
+                    </div>
                 </div>
             </div>
 
@@ -182,7 +200,6 @@
                 </div>
 
                 <div class="command-table-container">
-
                     <div class="cmd-header" style="background: #1a1a1a; color: #888; border-bottom: 1px solid #333;">
                         DATOS TOPOGRÁFICOS (PUNTERÍA)
                     </div>
@@ -227,12 +244,10 @@
                     </div>
                 </div>
 
-                <div id="recomendacion-msg" class="rec-box hidden"
-                    style="margin-top: 10px; font-weight:bold; font-size:0.9rem; border:1px dashed; padding:5px;"></div>
+                <div id="recomendacion-msg" class="rec-box hidden"></div>
                 <div id="tabla-cargas" class="charges-table hidden"></div>
+
                 <div class="hidden">
-                    <span id="resAzimutDeg">0.0°</span>
-                    <span id="resDist">0</span>
                     <span id="bal_elev">0</span>
                     <span id="bal_time">0</span>
                 </div>
@@ -284,6 +299,25 @@
                 </div>
 
                 <button id="btnCorregir" class="btn-red">APLICAR CORRECCIÓN</button>
+            </div>
+
+            <div id="historial-panel" class="history-box hidden">
+                <div class="history-header">HISTORIAL DE REGLAJE (MISION)</div>
+
+                <div class="history-table-header">
+                    <span style="width: 10%; text-align: center;">#</span>
+                    <span style="width: 45%; padding-left: 5px;">CORRECCIÓN</span>
+                    <span style="width: 15%; text-align: center;">AZ</span>
+                    <span style="width: 15%; text-align: center;">EL</span>
+                    <span style="width: 15%; text-align: center;">DIS</span>
+                </div>
+
+                <div id="lista-historial" class="history-list"></div>
+
+                <button id="btnResetHistorial" class="btn-small-red"
+                    style="margin-top: 5px; border-top: 1px solid #444;">
+                    REINICIAR MISIÓN (BORRAR)
+                </button>
             </div>
         </div>
 
