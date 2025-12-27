@@ -25,7 +25,6 @@
                 <select id="tipoGranada">
                     <option value="W87">CHINA - W87 (81mm)</option>
                     <option value="M43">USA - M43A1 (81mm)</option>
-                    <option value="HE_M1">HE - M1 (Ejemplo)</option>
                 </select>
             </div>
         </div>
@@ -88,18 +87,6 @@
                 </div>
 
                 <div class="dms-group hidden">
-                    <label class="group-label">LATITUD</label>
-                    <div class="input-row dms-row">
-                        <input type="number" id="tlat_d" placeholder="Gr"><span>°</span>
-                        <input type="number" id="tlat_m" placeholder="Min"><span>'</span>
-                        <input type="number" id="tlat_s" placeholder="Seg"><span>"</span>
-                    </div>
-                    <label class="group-label" style="margin-top:5px;">LONGITUD</label>
-                    <div class="input-row dms-row">
-                        <input type="number" id="tlon_d" placeholder="Gr"><span>°</span>
-                        <input type="number" id="tlon_m" placeholder="Min"><span>'</span>
-                        <input type="number" id="tlon_s" placeholder="Seg"><span>"</span>
-                    </div>
                 </div>
 
                 <div class="input-row dashed-top">
@@ -125,21 +112,6 @@
                     </div>
                 </div>
 
-                <div id="obs-dms" class="hidden">
-                    <label class="group-label">LATITUD OBS</label>
-                    <div class="input-row dms-row">
-                        <input type="number" id="olat_d" placeholder="Gr"><span>°</span>
-                        <input type="number" id="olat_m" placeholder="Min"><span>'</span>
-                        <input type="number" id="olat_s" placeholder="Seg"><span>"</span>
-                    </div>
-                    <label class="group-label" style="margin-top:5px;">LONGITUD OBS</label>
-                    <div class="input-row dms-row">
-                        <input type="number" id="olon_d" placeholder="Gr"><span>°</span>
-                        <input type="number" id="olon_m" placeholder="Min"><span>'</span>
-                        <input type="number" id="olon_s" placeholder="Seg"><span>"</span>
-                    </div>
-                </div>
-
                 <div class="input-row dashed-top">
                     <div class="input-wrapper" style="flex: 1.2;">
                         <label for="distObs">DISTANCIA (OBS-OBJ)</label>
@@ -157,29 +129,9 @@
                         </div>
                     </div>
                 </div>
-
-                <button id="btnCalcularObs" class="btn-small">CALCULAR POS. OBJETIVO</button>
-
-                <div id="mini-resumen" class="excel-box hidden">
-                    <div class="excel-row">
-                        <div class="excel-label blue-bg text-yellow">Dir. Tiro Recomendada</div>
-                        <div class="excel-value blue-bg text-yellow" id="excel_dir_rec">-</div>
-                    </div>
-                    <div class="excel-row">
-                        <div class="excel-label salmon-bg">Acimut magnético</div>
-                        <div class="excel-value salmon-bg" id="excel_az_mag">-</div>
-                    </div>
-                    <div class="excel-row">
-                        <div class="excel-label salmon-bg">Diferencia de Deriva</div>
-                        <div class="excel-value salmon-bg" id="excel_diff_deriva">-</div>
-                    </div>
-                    <div class="excel-row">
-                        <div class="excel-label salmon-bg font-bold">DISTANCIA</div>
-                        <div class="excel-value salmon-bg font-bold" id="excel_dist">-</div>
-                    </div>
-                </div>
             </div>
         </div>
+
         <div class="panel panel-center">
 
             <div class="tactical-header-box">
@@ -198,10 +150,19 @@
                         <span class="th-label">FECHA</span>
                         <input type="date" id="fecha_tiro" class="th-input">
                     </div>
-                    <div class="th-group">
-                        <span class="th-label text-yellow">VARIACIÓN (CALC.)</span>
+
+                    <div class="th-group" style="background: rgba(255, 179, 0, 0.05);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span class="th-label text-yellow">VARIACIÓN</span>
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <input type="checkbox" id="check_aplicar_variacion" checked
+                                    style="accent-color: #ffcc00;">
+                                <label for="check_aplicar_variacion"
+                                    style="font-size: 0.7rem; color: #aaa; cursor:pointer;">APLICAR</label>
+                            </div>
+                        </div>
                         <input type="number" id="input_variacion" class="th-input text-yellow bold" value="0.00"
-                            step="0.01" readonly style="background: rgba(255, 179, 0, 0.1);">
+                            step="0.01" readonly>
                     </div>
                 </div>
 
@@ -222,24 +183,23 @@
                     </div>
 
                     <div class="th-group">
-                        <span class="th-label">ORIENT. INICIAL</span>
-                        <input type="number" id="orientacion_base" class="th-input" value="0">
+                        <span class="th-label text-yellow">ORIENT. BASE</span>
+                        <input type="number" id="orientacion_base" class="th-input text-yellow bold" value="0"
+                            placeholder="0000">
                     </div>
                 </div>
             </div>
 
-            <button id="btnFuego" class="btn-large">¡CALCULAR DATOS DE TIRO!</button>
-
             <div id="balistica" class="display-screen">
-                <div class="screen-header">SOLUCIÓN DE FUEGO</div>
+                <div class="screen-header">SOLUCIÓN DE FUEGO (AUTO)</div>
 
                 <div class="data-group-main">
                     <div class="data-item">
                         <span class="label">AZIMUT DE TIRO (MILS)</span>
-                        <span id="resAzimutMils" class="value-huge blink">0000</span>
+                        <span id="resAzimutMils" class="value-huge blink">----</span>
                     </div>
                     <div style="font-size: 0.8rem; color: #888; margin-top:5px;">
-                        MAGNÉTICO: <span id="resAzimutMag" style="color: #fff; font-weight:bold;">0000</span>
+                        MAGNÉTICO: <span id="resAzimutMag" style="color: #fff; font-weight:bold;">----</span>
                     </div>
                 </div>
 
@@ -259,7 +219,7 @@
                     <div class="cmd-grid"
                         style="grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid var(--border-green);">
                         <div class="cmd-column">
-                            <div class="cmd-cell head">AZIMUT MAGN.</div>
+                            <div class="cmd-cell head">AZIMUT GRID</div>
                             <div class="cmd-cell val" id="topo_az" style="color: #fff;">-</div>
                         </div>
                         <div class="cmd-column">
@@ -273,11 +233,14 @@
                     </div>
 
                     <div class="cmd-header">COMANDOS DE TIRO (PARA EL CAÑÓN)</div>
-                    <div class="cmd-grid">
+
+                    <div class="cmd-grid" style="grid-template-columns: repeat(5, 1fr);">
+
                         <div class="cmd-column">
                             <div class="cmd-cell head">ORIENT. INIC</div>
                             <div class="cmd-cell val" id="cmd_orient">-</div>
                         </div>
+
                         <div class="cmd-column">
                             <div class="cmd-cell head">DERIVA (AZ)</div>
                             <div class="cmd-cell val" id="cmd_deriva">-</div>
@@ -300,16 +263,30 @@
                 <div id="recomendacion-msg" class="rec-box hidden"></div>
                 <div id="tabla-cargas" class="charges-table hidden"></div>
 
-                <div class="hidden">
-                    <span id="bal_elev">0</span>
-                    <span id="bal_time">0</span>
+                <div id="mini-resumen" class="excel-box hidden">
+                    <div class="excel-row">
+                        <div class="excel-label blue-bg text-yellow">Dir. Tiro Recomendada</div>
+                        <div class="excel-value blue-bg text-yellow" id="excel_dir_rec">-</div>
+                    </div>
+                    <div class="excel-row">
+                        <div class="excel-label salmon-bg">Acimut magnético</div>
+                        <div class="excel-value salmon-bg" id="excel_az_mag">-</div>
+                    </div>
+                    <div class="excel-row">
+                        <div class="excel-label salmon-bg">Diferencia de Deriva</div>
+                        <div class="excel-value salmon-bg" id="excel_diff_deriva">-</div>
+                    </div>
+                    <div class="excel-row">
+                        <div class="excel-label salmon-bg font-bold">DISTANCIA</div>
+                        <div class="excel-value salmon-bg font-bold" id="excel_dist">-</div>
+                    </div>
                 </div>
             </div>
 
             <div id="correcciones" class="correction-panel">
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #550000; padding-bottom: 5px;">
-                    <div class="box-title-red" style="position: static; margin: 0;">REGLAJE</div>
+                    <div class="box-title-red" style="position: static; margin: 0;">REGLAJE (CORRECCIONES)</div>
                     <select id="metodo_reglaje" onchange="toggleMetodoReglaje()"
                         style="background: #000; color: #ff3333; border: 1px solid #ff3333; font-weight: bold; padding: 2px;">
                         <option value="apreciacion">1. APRECIACIÓN</option>
@@ -345,45 +322,15 @@
                 </div>
 
                 <div id="inputs_medicion" class="corr-grid hidden">
-                    <div>
-                        <label>AZIMUT IMPACTO</label>
-                        <div class="input-group">
-                            <input type="number" id="impacto_az" placeholder="0000"
-                                style="width: 60%; border-color: #3a1f1f; color: #ff5555;">
-                            <select id="impacto_az_unit"
-                                style="width: 40%; background: #220000; color: #fff; border: 1px solid #3a1f1f;">
-                                <option value="mils">MILS</option>
-                                <option value="deg">GRAD</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label>DISTANCIA IMPACTO (m)</label>
-                        <input type="number" id="impacto_dist" placeholder="Metros (Telémetro)"
-                            class="input-full-width">
-                    </div>
                 </div>
 
                 <button id="btnCorregir" class="btn-red">APLICAR CORRECCIÓN</button>
             </div>
 
             <div id="historial-panel" class="history-box hidden">
-                <div class="history-header">HISTORIAL DE REGLAJE (MISION)</div>
-
-                <div class="history-table-header">
-                    <span style="width: 10%; text-align: center;">#</span>
-                    <span style="width: 45%; padding-left: 5px;">CORRECCIÓN</span>
-                    <span style="width: 15%; text-align: center;">AZ</span>
-                    <span style="width: 15%; text-align: center;">EL</span>
-                    <span style="width: 15%; text-align: center;">DIS</span>
-                </div>
-
+                <div class="history-header">HISTORIAL DE REGLAJE</div>
                 <div id="lista-historial" class="history-list"></div>
-
-                <button id="btnResetHistorial" class="btn-small-red"
-                    style="margin-top: 5px; border-top: 1px solid #444;">
-                    REINICIAR MISIÓN (BORRAR)
-                </button>
+                <button id="btnResetHistorial" class="btn-small-red">REINICIAR MISIÓN</button>
             </div>
         </div>
 
