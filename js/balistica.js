@@ -85,8 +85,6 @@ function calcularBalistica(distancia, tipoID, cargaForzada = null) {
         const t1 = fila1.t || 0;
         const t2 = fila2.t || 0;
         const t = t1 + factor * (t2 - t1);
-
-        // Obtención Factores (Prioridad Específico > Genérico)
         const f_vtraves = (fila1.v_traves !== undefined) ? fila1.v_traves : factores.v_traves;
         const f_vcola = (fila1.v_cola !== undefined) ? fila1.v_cola : factores.v_cola;
         const f_temp = factores.t_aire || 0;

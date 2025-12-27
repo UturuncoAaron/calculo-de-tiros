@@ -5,12 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SCT - SISTEMA DE CONTROL DE TIRO</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Share+Tech+Mono&display=swap"
-        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
 </head>
 
 <body>
@@ -42,77 +37,127 @@
 
             <div class="box-section">
                 <div class="box-title">1. POSICIÓN MORTERO (M)</div>
+
                 <div class="utm-group input-row">
-                    <input type="number" id="mx" placeholder="Este (X)">
-                    <input type="number" id="my" placeholder="Norte (Y)">
+                    <div class="input-wrapper">
+                        <label for="mx">ESTE (X)</label>
+                        <input type="number" id="mx" placeholder="000000">
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="my">NORTE (Y)</label>
+                        <input type="number" id="my" placeholder="0000000">
+                    </div>
                 </div>
+
                 <div class="dms-group hidden">
-                    <div class="input-row">
-                        <input type="number" id="mlat_d" placeholder="Lat Gr"><input type="number" id="mlat_m"
-                            placeholder="Min"><input type="number" id="mlat_s" placeholder="Seg">
+                    <label class="group-label">LATITUD</label>
+                    <div class="input-row dms-row">
+                        <input type="number" id="mlat_d" placeholder="Gr"><span>°</span>
+                        <input type="number" id="mlat_m" placeholder="Min"><span>'</span>
+                        <input type="number" id="mlat_s" placeholder="Seg"><span>"</span>
                     </div>
-                    <div class="input-row">
-                        <input type="number" id="mlon_d" placeholder="Lon Gr"><input type="number" id="mlon_m"
-                            placeholder="Min"><input type="number" id="mlon_s" placeholder="Seg">
+                    <label class="group-label" style="margin-top:5px;">LONGITUD</label>
+                    <div class="input-row dms-row">
+                        <input type="number" id="mlon_d" placeholder="Gr"><span>°</span>
+                        <input type="number" id="mlon_m" placeholder="Min"><span>'</span>
+                        <input type="number" id="mlon_s" placeholder="Seg"><span>"</span>
                     </div>
                 </div>
+
                 <div class="input-row dashed-top">
-                    <div class="label" style="align-self: center; width: 40px;">Alt. Pieza:</div>
-                    <input type="number" id="alt_pieza" placeholder="Metros">
+                    <div class="label" style="align-self: center; margin-right: 10px;">ALTITUD:</div>
+                    <div class="input-wrapper">
+                        <input type="number" id="alt_pieza" placeholder="msnm">
+                        <span class="unit-suffix">m</span>
+                    </div>
                 </div>
             </div>
 
             <div class="box-section">
                 <div class="box-title">2. POSICIÓN OBJETIVO (T)</div>
+
                 <div class="utm-group input-row">
-                    <input type="number" id="tx" placeholder="Este (X)">
-                    <input type="number" id="ty" placeholder="Norte (Y)">
+                    <div class="input-wrapper">
+                        <label for="tx">ESTE (X)</label>
+                        <input type="number" id="tx" placeholder="000000">
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="ty">NORTE (Y)</label>
+                        <input type="number" id="ty" placeholder="0000000">
+                    </div>
                 </div>
+
                 <div class="dms-group hidden">
-                    <div class="input-row">
-                        <input type="number" id="tlat_d" placeholder="Lat Gr"><input type="number" id="tlat_m"
-                            placeholder="Min"><input type="number" id="tlat_s" placeholder="Seg">
+                    <label class="group-label">LATITUD</label>
+                    <div class="input-row dms-row">
+                        <input type="number" id="tlat_d" placeholder="Gr"><span>°</span>
+                        <input type="number" id="tlat_m" placeholder="Min"><span>'</span>
+                        <input type="number" id="tlat_s" placeholder="Seg"><span>"</span>
                     </div>
-                    <div class="input-row">
-                        <input type="number" id="tlon_d" placeholder="Lon Gr"><input type="number" id="tlon_m"
-                            placeholder="Min"><input type="number" id="tlon_s" placeholder="Seg">
+                    <label class="group-label" style="margin-top:5px;">LONGITUD</label>
+                    <div class="input-row dms-row">
+                        <input type="number" id="tlon_d" placeholder="Gr"><span>°</span>
+                        <input type="number" id="tlon_m" placeholder="Min"><span>'</span>
+                        <input type="number" id="tlon_s" placeholder="Seg"><span>"</span>
                     </div>
                 </div>
+
                 <div class="input-row dashed-top">
-                    <div class="label" style="align-self: center; width: 40px;">Alt. Obj:</div>
-                    <input type="number" id="alt_obj" placeholder="Metros">
+                    <div class="label" style="align-self: center; margin-right: 10px;">ALT. OBJ:</div>
+                    <div class="input-wrapper">
+                        <input type="number" id="alt_obj" placeholder="msnm">
+                        <span class="unit-suffix">m</span>
+                    </div>
                 </div>
             </div>
 
             <div class="box-section obs-box">
-                <div class="box-title">3. OBSERVADOR (Opcional)</div>
+                <div class="box-title">3. OBSERVADOR (OPCIONAL)</div>
 
                 <div id="obs-utm" class="input-row">
-                    <input type="number" id="ox" placeholder="Obs Este">
-                    <input type="number" id="oy" placeholder="Obs Norte">
+                    <div class="input-wrapper">
+                        <label for="ox">OBS ESTE</label>
+                        <input type="number" id="ox" placeholder="000000">
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="oy">OBS NORTE</label>
+                        <input type="number" id="oy" placeholder="0000000">
+                    </div>
                 </div>
 
                 <div id="obs-dms" class="hidden">
-                    <div class="input-row">
-                        <input type="number" id="olat_d" placeholder="Lat Gr"><input type="number" id="olat_m"
-                            placeholder="Min"><input type="number" id="olat_s" placeholder="Seg">
+                    <label class="group-label">LATITUD OBS</label>
+                    <div class="input-row dms-row">
+                        <input type="number" id="olat_d" placeholder="Gr"><span>°</span>
+                        <input type="number" id="olat_m" placeholder="Min"><span>'</span>
+                        <input type="number" id="olat_s" placeholder="Seg"><span>"</span>
                     </div>
-                    <div class="input-row">
-                        <input type="number" id="olon_d" placeholder="Lon Gr"><input type="number" id="olon_m"
-                            placeholder="Min"><input type="number" id="olon_s" placeholder="Seg">
+                    <label class="group-label" style="margin-top:5px;">LONGITUD OBS</label>
+                    <div class="input-row dms-row">
+                        <input type="number" id="olon_d" placeholder="Gr"><span>°</span>
+                        <input type="number" id="olon_m" placeholder="Min"><span>'</span>
+                        <input type="number" id="olon_s" placeholder="Seg"><span>"</span>
                     </div>
                 </div>
 
                 <div class="input-row dashed-top">
-                    <input type="number" id="distObs" placeholder="Distancia (m)" style="flex: 1;">
-                    <div style="display: flex; flex: 1; gap: 2px;">
-                        <input type="number" id="azObs" placeholder="Azimut" style="width: 60%;">
-                        <select id="azObsUnit" style="width: 40%; font-size: 0.8rem; padding: 0;">
-                            <option value="mils">MILS</option>
-                            <option value="deg">GRAD</option>
-                        </select>
+                    <div class="input-wrapper" style="flex: 1.2;">
+                        <label for="distObs">DISTANCIA (OBS-OBJ)</label>
+                        <input type="number" id="distObs" placeholder="Metros">
+                    </div>
+
+                    <div class="input-wrapper" style="flex: 1;">
+                        <label for="azObs">AZIMUT</label>
+                        <div style="display: flex;">
+                            <input type="number" id="azObs" placeholder="0000" style="border-right: none;">
+                            <select id="azObsUnit" style="width: 45px; padding: 0; font-size: 0.7rem;">
+                                <option value="mils">MIL</option>
+                                <option value="deg">GRD</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
+
                 <button id="btnCalcularObs" class="btn-small">CALCULAR POS. OBJETIVO</button>
 
                 <div id="mini-resumen" class="excel-box hidden">
@@ -133,13 +178,21 @@
                         <div class="excel-value salmon-bg font-bold" id="excel_dist">-</div>
                     </div>
                 </div>
-
             </div>
         </div>
-
         <div class="panel panel-center">
 
             <div class="tactical-header-box">
+
+                <div class="lock-bar">
+                    <span class="lock-label">ESTADO DE DATOS INICIALES:</span>
+                    <label class="switch-container">
+                        <input type="checkbox" id="check_bloqueo">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="lock-text" class="status-text text-green">ABIERTO (EDITABLE)</span>
+                </div>
+
                 <div class="th-row border-bottom">
                     <div class="th-group">
                         <span class="th-label">FECHA</span>
@@ -292,10 +345,23 @@
                 </div>
 
                 <div id="inputs_medicion" class="corr-grid hidden">
-                    <div><label>AZIMUT IMPACTO (MILS)</label><input type="number" id="impacto_az"
-                            placeholder="Mils (Brújula)" class="input-full-width"></div>
-                    <div><label>DISTANCIA IMPACTO (m)</label><input type="number" id="impacto_dist"
-                            placeholder="Metros (Telémetro)" class="input-full-width"></div>
+                    <div>
+                        <label>AZIMUT IMPACTO</label>
+                        <div class="input-group">
+                            <input type="number" id="impacto_az" placeholder="0000"
+                                style="width: 60%; border-color: #3a1f1f; color: #ff5555;">
+                            <select id="impacto_az_unit"
+                                style="width: 40%; background: #220000; color: #fff; border: 1px solid #3a1f1f;">
+                                <option value="mils">MILS</option>
+                                <option value="deg">GRAD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label>DISTANCIA IMPACTO (m)</label>
+                        <input type="number" id="impacto_dist" placeholder="Metros (Telémetro)"
+                            class="input-full-width">
+                    </div>
                 </div>
 
                 <button id="btnCorregir" class="btn-red">APLICAR CORRECCIÓN</button>
@@ -325,36 +391,6 @@
             <div class="radar-container">
                 <canvas id="radarCanvas" width="300" height="300"></canvas>
                 <div class="radar-overlay">RADAR DE TIRO</div>
-            </div>
-
-            <div class="meteo-section">
-                <div class="title-cyan">DATOS ATMOSFÉRICOS</div>
-                <div class="meteo-grid-inputs">
-                    <div class="input-block">
-                        <label>VIENTO (DIR°)</label>
-                        <input type="number" id="meteo_dir" class="input-cyan" placeholder="0-360">
-                    </div>
-                    <div class="input-block">
-                        <label>VELOC. (m/s)</label>
-                        <input type="number" id="meteo_vel" class="input-cyan" placeholder="m/s">
-                    </div>
-                    <div class="input-block">
-                        <label>TEMP. AIRE (°C)</label>
-                        <input type="number" id="meteo_temp" class="input-cyan" value="15">
-                    </div>
-                    <div class="input-block">
-                        <label>PRESIÓN (mmHg)</label>
-                        <input type="number" id="meteo_presion" class="input-cyan" value="750">
-                    </div>
-                    <div class="input-block">
-                        <label>TEMP. CARGA (°C)</label>
-                        <input type="number" id="meteo_temp_carga" class="input-cyan" value="15">
-                    </div>
-                    <div class="input-block">
-                        <label>DIF. PESO (+/-)</label>
-                        <input type="number" id="meteo_peso" class="input-cyan" value="0">
-                    </div>
-                </div>
             </div>
         </div>
     </div>
