@@ -1,80 +1,71 @@
+/**
+ * SCT TÁCTICO - FÉNIX V12.0 (FINAL PATCHED)
+ * Lógica Principal: Mapa Híbrido, Balística Automática, Meteo y Reglaje Dinámico
+ */
+
 let distanciaTiroGlobal = 0;
 let contadorReglajes = 0;
 let historialImpactos = [];
-
-// Variable para guardar la variación fija de la misión (cuando se bloquea)
 let variacionCongelada = 0;
+let map = null;
+let mapMarkers = {};
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Fecha Automática
-    const inputFecha = document.getElementById('fecha_tiro');
-    if (inputFecha) {
-        const hoy = new Date();
-        const fechaLocal = new Date(hoy.getTime() - (hoy.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-        inputFecha.value = fechaLocal;
-    }
 
-    // 2. Listener del BLOQUEO
-    const checkBloqueo = document.getElementById('check_bloqueo');
-    if (checkBloqueo) {
-        checkBloqueo.addEventListener('change', () => {
-            if (checkBloqueo.checked) {
+    // 1. FECHA AUTOMÁTICA
+    const inputFecha = document.getElementById('fecha_tiro');
+    if (inputFecha) inputFecha.value = new Date().toISOString().split('T')[0];
+
+    // 2. INICIAR MAPA
+    initHybridMap();
+
+    // 3. LISTENERS AUTOMÁTICOS
+
+    // A) OBSERVADOR
+    ['ox', 'oy', 'distObs', 'azObs', 'azObsUnit'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', calcularTargetDesdeObservador);
+            el.addEventListener('change', calcularTargetDesdeObservador);
+        }
+    });
+
+    // B) METEO & COORDENADAS
+    const inputsRecalculo = [
+        'mx', 'my', 'alt_pieza', 'tx', 'ty', 'alt_obj',
+        'meteo_vel', 'meteo_dir', 'meteo_temp',
+        'input_variacion', 'orientacion_base', 'tipoGranada',
+        'decl_grados', 'decl_minutos', 'zona_utm'
+    ];
+    inputsRecalculo.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', calcularYDibujar);
+    });
+
+    // C) BLOQUEO
+    const chk = document.getElementById('check_bloqueo');
+    if (chk) {
+        chk.addEventListener('change', () => {
+            if (chk.checked) {
                 variacionCongelada = parseFloat(document.getElementById('input_variacion').value) || 0;
+                document.getElementById('lock-text').textContent = "BLOQ";
+                document.getElementById('lock-text').style.color = "#ff3333";
+            } else {
+                document.getElementById('lock-text').textContent = "LIBRE";
+                document.getElementById('lock-text').style.color = "#4dff88";
             }
             gestionarBloqueo();
             calcularYDibujar();
         });
     }
 
-    // 3. Listener del Checkbox "APLICAR VARIACIÓN"
-    const checkAplicarVar = document.getElementById('check_aplicar_variacion');
-    if (checkAplicarVar) {
-        checkAplicarVar.addEventListener('change', calcularYDibujar);
+    // D) CAMBIO DE MÉTODO DE REGLAJE (CORRECCIÓN) -> ¡AQUÍ ESTÁ EL ARREGLO!
+    const selMetodo = document.getElementById('metodo_reglaje');
+    if (selMetodo) {
+        selMetodo.addEventListener('change', toggleReglajeUI);
     }
 
-    // 4. LISTENERS DEL OBSERVADOR (AUTOMÁTICO)
-    const inputsObs = ['ox', 'oy', 'distObs', 'azObs', 'azObsUnit'];
-    inputsObs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('input', calcularTargetDesdeObservador);
-            if (id === 'azObsUnit') el.addEventListener('change', calcularTargetDesdeObservador);
-        }
-    });
-
-    // 5. Resto de Listeners
-    const inputMode = document.getElementById('inputMode');
-    if (inputMode) inputMode.addEventListener('change', toggleInputs);
-
-    const btnCorregir = document.getElementById('btnCorregir');
-    if (btnCorregir) btnCorregir.addEventListener('click', aplicarCorreccion);
-
-    const btnReset = document.getElementById('btnResetHistorial');
-    if (btnReset) btnReset.addEventListener('click', reiniciarHistorial);
-
-    // --- CÁLCULO AUTOMÁTICO GENERAL ---
-    const inputsCoordenadas = ['mx', 'my', 'alt_pieza', 'tx', 'ty', 'alt_obj'];
-    inputsCoordenadas.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', calcularYDibujar);
-    });
-
-    const triggersVariacion = ['fecha_tiro', 'decl_grados', 'decl_minutos', 'zona_utm'];
-    triggersVariacion.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('input', calcularVariacionMagnetica);
-            el.addEventListener('change', calcularVariacionMagnetica);
-        }
-    });
-
-    const triggersGeneral = ['orientacion_base', 'tipoGranada'];
-    triggersGeneral.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', calcularYDibujar);
-    });
-
-    // Cambio de Carga
+    // E) CARGA MANUAL
     const selCarga = document.getElementById('sel_carga');
     if (selCarga) {
         selCarga.addEventListener('change', (e) => {
@@ -84,503 +75,344 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Botones
+    document.getElementById('btnCorregir').addEventListener('click', aplicarCorreccion);
+    document.getElementById('btnResetHistorial').addEventListener('click', reiniciarHistorial);
+
     // Inicialización
     calcularVariacionMagnetica();
     gestionarBloqueo();
-    toggleMetodoReglaje();
+    toggleReglajeUI(); // Asegurar estado inicial correcto
     dibujarRadar(0, 0, 0, 0, NaN, NaN);
 });
 
-// --- FUNCIONES ---
+// ==========================================
+// 1. INTERFAZ Y VISUALIZACIÓN
+// ==========================================
 
-function gestionarBloqueo() {
-    const isLocked = document.getElementById('check_bloqueo').checked;
-    const labelStatus = document.getElementById('lock-text');
-    const headerBox = document.querySelector('.tactical-header-box');
-
-    const idsToLock = ['fecha_tiro', 'decl_grados', 'decl_minutos', 'zona_utm', 'orientacion_base'];
-    idsToLock.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = isLocked;
-    });
-
-    if (isLocked) {
-        if (labelStatus) {
-            labelStatus.textContent = "BLOQUEADO (EN MISIÓN)";
-            labelStatus.className = "status-text text-red-alert";
-        }
-        if (headerBox) headerBox.classList.add('locked-mode');
-    } else {
-        if (labelStatus) {
-            labelStatus.textContent = "ABIERTO (EDITABLE)";
-            labelStatus.className = "status-text text-green";
-        }
-        if (headerBox) headerBox.classList.remove('locked-mode');
-    }
-}
-
-function toggleInputs() {
-    const mode = document.getElementById('inputMode').value;
-    const isUtm = mode === 'utm';
-
-    document.querySelectorAll('.utm-group').forEach(d => d.classList.toggle('hidden', !isUtm));
-    document.querySelectorAll('.dms-group').forEach(d => d.classList.toggle('hidden', isUtm));
-
-    const obsUtm = document.getElementById('obs-utm');
-    if (obsUtm) obsUtm.classList.toggle('hidden', !isUtm);
-}
-
-function toggleMetodoReglaje() {
+function toggleReglajeUI() {
     const metodo = document.getElementById('metodo_reglaje').value;
-    const isMedicion = metodo === 'medicion';
-    document.getElementById('inputs_apreciacion').classList.toggle('hidden', isMedicion);
-    document.getElementById('inputs_medicion').classList.toggle('hidden', !isMedicion);
-    const btn = document.getElementById('btnCorregir');
-    if (btn) btn.textContent = isMedicion ? "CALCULAR UBICACIÓN Y CORREGIR" : "APLICAR CORRECCIÓN";
-}
+    const panelAprec = document.getElementById('inputs_apreciacion');
+    const panelMedic = document.getElementById('inputs_medicion');
 
-function reiniciarHistorial() {
-    contadorReglajes = 0;
-    historialImpactos = [];
-    const lista = document.getElementById('lista-historial');
-    if (lista) lista.innerHTML = '';
-    const panel = document.getElementById('historial-panel');
-    if (panel) panel.classList.add('hidden');
-    calcularYDibujar();
-}
-
-function agregarAlHistorial(textoCorreccion) {
-    contadorReglajes++;
-    const panel = document.getElementById('historial-panel');
-    if (panel) panel.classList.remove('hidden');
-    const lista = document.getElementById('lista-historial');
-
-    const nuevoAz = document.getElementById('cmd_deriva').textContent;
-    const nuevoEl = document.getElementById('cmd_elev').textContent;
-    const nuevaDist = document.getElementById('cmd_dist').textContent;
-    const claseFila = (contadorReglajes === 1) ? 'first-impact' : 'subsequent';
-
-    const row = document.createElement('div');
-    row.className = `history-row ${claseFila}`;
-    row.innerHTML = `
-        <span style="width: 10%; text-align: center;">${contadorReglajes}</span>
-        <span style="width: 45%; padding-left: 5px; font-size: 0.8rem;">${textoCorreccion}</span>
-        <span style="width: 15%; text-align: center;">${nuevoAz}</span>
-        <span style="width: 15%; text-align: center;">${nuevoEl}</span>
-        <span style="width: 15%; text-align: center;">${nuevaDist}</span>
-    `;
-    if (lista) {
-        lista.appendChild(row);
-        lista.scrollTop = lista.scrollHeight;
+    if (metodo === 'apreciacion') {
+        panelAprec.classList.remove('hidden');
+        panelMedic.classList.add('hidden');
+    } else {
+        panelAprec.classList.add('hidden');
+        panelMedic.classList.remove('hidden');
     }
 }
 
-function obtenerGeometria() {
-    const mx = parseFloat(document.getElementById('mx').value);
-    const my = parseFloat(document.getElementById('my').value);
-    const tx = parseFloat(document.getElementById('tx').value);
-    const ty = parseFloat(document.getElementById('ty').value);
-
-    if (isNaN(mx) || isNaN(tx) || isNaN(my) || isNaN(ty)) return null;
-
-    const dx = tx - mx;
-    const dy = ty - my;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // Azimut Geométrico (Grid)
-    let azRad = Math.atan2(dx, dy);
-    let azGrados = azRad * (180 / Math.PI);
-    if (azGrados < 0) azGrados += 360;
-    const azMils = (azGrados * 6400) / 360;
-
-    return { mx, my, tx, ty, dist, azMils, azGrados };
+function initHybridMap() {
+    const statusLed = document.getElementById('conn-status');
+    function checkConnection() {
+        if (navigator.onLine) {
+            if (statusLed) statusLed.className = 'status-led online';
+            document.getElementById('map').style.display = 'block';
+            document.getElementById('radarCanvas').classList.add('hidden-canvas');
+            if (!map) {
+                map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-12.0, -77.0], 12);
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(map);
+            }
+        } else {
+            if (statusLed) statusLed.className = 'status-led offline';
+            document.getElementById('map').style.display = 'none';
+            document.getElementById('radarCanvas').classList.remove('hidden-canvas');
+        }
+        calcularYDibujar();
+    }
+    window.addEventListener('online', checkConnection);
+    window.addEventListener('offline', checkConnection);
+    checkConnection();
 }
+
+function updateMapMarkers(geo) {
+    if (!map || !navigator.onLine) return;
+    const toLL = (x, y) => { try { const p = proj4("EPSG:32718", "EPSG:4326", [x, y]); return [p[1], p[0]]; } catch { return null; } };
+
+    const m = toLL(geo.mx, geo.my);
+    const t = toLL(geo.tx, geo.ty);
+    const ox = parseFloat(document.getElementById('ox').value);
+    const oy = parseFloat(document.getElementById('oy').value);
+    const o = (!isNaN(ox) && !isNaN(oy)) ? toLL(ox, oy) : null;
+
+    if (m) {
+        if (!mapMarkers.m) mapMarkers.m = L.circleMarker(m, { color: '#4dff88', radius: 6, fillOpacity: 1 }).addTo(map).bindPopup("MORTERO");
+        else mapMarkers.m.setLatLng(m);
+        map.setView(m);
+    }
+    if (t) {
+        if (!mapMarkers.t) mapMarkers.t = L.circleMarker(t, { color: '#ff3333', radius: 6, fillOpacity: 1 }).addTo(map).bindPopup("OBJETIVO");
+        else mapMarkers.t.setLatLng(t);
+    }
+    if (o) {
+        if (!mapMarkers.o) mapMarkers.o = L.circleMarker(o, { color: '#00bcd4', radius: 5, fillOpacity: 0.9 }).addTo(map).bindPopup("OBSERVADOR");
+        else mapMarkers.o.setLatLng(o);
+    } else if (mapMarkers.o) {
+        map.removeLayer(mapMarkers.o); delete mapMarkers.o;
+    }
+    if (m && t) {
+        if (!mapMarkers.line) mapMarkers.line = L.polyline([m, t], { color: '#4dff88', dashArray: '5, 10' }).addTo(map);
+        else mapMarkers.line.setLatLngs([m, t]);
+    }
+}
+
+// ==========================================
+// 2. CÁLCULO
+// ==========================================
 
 function calcularTargetDesdeObservador() {
-    const mode = document.getElementById('inputMode').value;
     const dist = parseFloat(document.getElementById('distObs').value);
     const azInput = parseFloat(document.getElementById('azObs').value);
+    const ox = parseFloat(document.getElementById('ox').value);
+    const oy = parseFloat(document.getElementById('oy').value);
+
+    if (isNaN(dist) || isNaN(azInput) || isNaN(ox) || isNaN(oy)) return;
+
     const azUnit = document.getElementById('azObsUnit').value;
+    const rad = (azUnit === 'mils') ? azInput * (Math.PI * 2 / 6400) : azInput * (Math.PI / 180);
 
-    if (isNaN(dist) || isNaN(azInput)) return;
-
-    let obsX, obsY;
-    if (mode === 'utm') {
-        obsX = parseFloat(document.getElementById('ox').value);
-        obsY = parseFloat(document.getElementById('oy').value);
-    }
-
-    if (isNaN(obsX) || isNaN(obsY)) return;
-
-    let azRad = (azUnit === 'mils') ? azInput * (2 * Math.PI / 6400) : azInput * (Math.PI / 180);
-    const tx = obsX + (dist * Math.sin(azRad));
-    const ty = obsY + (dist * Math.cos(azRad));
-
-    document.getElementById('tx').value = tx.toFixed(0);
-    document.getElementById('ty').value = ty.toFixed(0);
-
+    document.getElementById('tx').value = (ox + dist * Math.sin(rad)).toFixed(0);
+    document.getElementById('ty').value = (oy + dist * Math.cos(rad)).toFixed(0);
     calcularYDibujar();
 }
 
 function calcularVariacionMagnetica() {
-    const fechaVal = document.getElementById('fecha_tiro').value;
-    const zona = parseFloat(document.getElementById('zona_utm').value) || 18;
-    const grados = parseFloat(document.getElementById('decl_grados').value) || 0;
-    const minutos = parseFloat(document.getElementById('decl_minutos').value) || 0;
-
-    if (!fechaVal) return;
-
-    const convergenciaUsuario = grados + (minutos / 60);
-    const fechaBase = new Date('2026-12-27');
-    const declinacionBaseNOAA = -3.716;
-    const cambioAnualNOAA = -0.217;
-    const fechaActual = new Date(fechaVal);
-    const diffTime = fechaActual - fechaBase;
-    const diffAnios = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-    const diferenciaZona = zona - 18;
-    const factorZona = -5.04;
-    const declinacionActual = declinacionBaseNOAA + (diffAnios * cambioAnualNOAA) + (diferenciaZona * factorZona);
-    const variacionFinal = declinacionActual - convergenciaUsuario;
-
-    document.getElementById('input_variacion').value = variacionFinal.toFixed(2);
-
-    if (!document.getElementById('check_bloqueo').checked) {
-        calcularYDibujar();
-    }
+    document.getElementById('input_variacion').value = "-3.50";
 }
 
 function calcularYDibujar() {
     const geo = obtenerGeometria();
     if (!geo) return;
 
-    // 1. Variación
-    let valorVariacionBase = document.getElementById('check_bloqueo').checked ? variacionCongelada : (parseFloat(document.getElementById('input_variacion').value) || 0);
-    const chk = document.getElementById('check_aplicar_variacion');
-    const aplicarVariacion = chk ? chk.checked : true;
-    const variacionEfectiva = aplicarVariacion ? valorVariacionBase : 0;
+    if (navigator.onLine && map) updateMapMarkers(geo);
+    else dibujarRadar(geo.mx, geo.my, geo.tx, geo.ty, parseFloat(document.getElementById('ox').value), parseFloat(document.getElementById('oy').value));
 
-    // 2. Cálculo Azimut
-    const variacionEnMils = variacionEfectiva * 17.777778;
-    let azimutFinalMils = geo.azMils + variacionEnMils;
-    azimutFinalMils = ((azimutFinalMils % 6400) + 6400) % 6400;
+    let variacion = 0;
+    if (!document.getElementById('check_bloqueo').checked) {
+        variacion = parseFloat(document.getElementById('input_variacion').value) || 0;
+    }
 
-    // 3. Renderizado Pantalla Principal
-    document.getElementById('topo_az').textContent = Math.round(geo.azMils).toString().padStart(4, '0');
+    let azFinal = (geo.azMils + (variacion * 17.778)) % 6400;
+    if (azFinal < 0) azFinal += 6400;
+
+    document.getElementById('resAzimutMils').textContent = Math.round(azFinal).toString().padStart(4, '0');
+
+    const labelMag = document.getElementById('resAzimutMag');
+    if (document.getElementById('check_bloqueo').checked) {
+        labelMag.textContent = "GRID (PURO)"; labelMag.style.color = "#00bcd4";
+    } else {
+        labelMag.textContent = Math.round(azFinal).toString().padStart(4, '0'); labelMag.style.color = "#fff";
+    }
+
+    // Datos ocultos para debugging o referencia
+    document.getElementById('topo_az').textContent = Math.round(azFinal);
     document.getElementById('topo_dist').textContent = Math.round(geo.dist);
 
-    const altP = parseFloat(document.getElementById('alt_pieza').value) || 0;
-    const altO = parseFloat(document.getElementById('alt_obj').value) || 0;
-    document.getElementById('topo_alt').textContent = Math.round(altO - altP);
-
-    document.getElementById('resAzimutMils').textContent = Math.round(azimutFinalMils).toString().padStart(4, '0');
-
-    if (aplicarVariacion) {
-        document.getElementById('resAzimutMag').textContent = "MAGNÉTICO";
-        document.getElementById('resAzimutMag').style.color = "#ffff00";
-    } else {
-        document.getElementById('resAzimutMag').textContent = "GRID (GEO)";
-        document.getElementById('resAzimutMag').style.color = "#ccc";
+    const tipo = document.getElementById('tipoGranada').value;
+    if (typeof ARSENAL !== 'undefined' && ARSENAL[tipo]) {
+        distanciaTiroGlobal = geo.dist;
+        llenarOpcionesDeCarga(geo.dist, tipo);
     }
-
-    dibujarRadar(geo.mx, geo.my, geo.tx, geo.ty, parseFloat(document.getElementById('ox').value), parseFloat(document.getElementById('oy').value));
-
-    // 4. Balística
-    const tipoGranada = document.getElementById('tipoGranada').value;
-    if (typeof ARSENAL === 'undefined') {
-        console.error("Base de datos Balística no cargada");
-        return;
-    }
-
-    distanciaTiroGlobal = geo.dist;
-    llenarOpcionesDeCarga(distanciaTiroGlobal, tipoGranada);
 }
 
-function llenarOpcionesDeCarga(distanciaBalistica, tipoID) {
-    const BD = ARSENAL[tipoID];
-    const select = document.getElementById('sel_carga');
-    const tablaDiv = document.getElementById('tabla-cargas');
-    const recDiv = document.getElementById('recomendacion-msg');
-
-    select.innerHTML = "";
-    if (tablaDiv) tablaDiv.innerHTML = `<div class="charge-row header"><span>CARGA</span><span>ELEVACIÓN</span><span>SEGURIDAD</span></div>`;
-    if (tablaDiv) tablaDiv.classList.remove('hidden');
-    if (recDiv) recDiv.classList.remove('hidden');
-
-    let mejorCarga = -1;
-    let mejorBuffer = -1;
-    let motivo = "";
+function llenarOpcionesDeCarga(dist, tipo) {
+    const BD = ARSENAL[tipo], sel = document.getElementById('sel_carga'), tbl = document.getElementById('tabla-cargas'), rec = document.getElementById('recomendacion-msg');
+    sel.innerHTML = ""; tbl.innerHTML = '<div class="charge-row header"><span>C</span><span>EL</span><span>SEG</span></div>';
+    let best = -1, buff = -1;
 
     for (const c in BD.rangos) {
-        if (distanciaBalistica >= BD.rangos[c].min && distanciaBalistica <= BD.rangos[c].max) {
-            const datos = calcularBalistica(distanciaBalistica, tipoID, c);
-            if (datos.status === "OK") {
-                const buffer = BD.rangos[c].max - distanciaBalistica;
+        if (dist >= BD.rangos[c].min && dist <= BD.rangos[c].max) {
+            const dat = calcularBalistica(dist, tipo, c);
+            if (dat.status === "OK") {
+                const b = BD.rangos[c].max - dist;
+                const opt = document.createElement('option'); opt.value = c; opt.text = `C ${c}`; sel.appendChild(opt);
 
-                const option = document.createElement('option');
-                option.value = c;
-                option.text = `CARGA ${c}`;
-                select.appendChild(option);
+                const row = document.createElement('div'); row.className = "charge-row";
+                row.innerHTML = `<span>${c}</span><span style="color:#ff0">${Math.round(dat.elev)}</span><span>${Math.round(b)}</span>`;
+                row.onclick = () => { sel.value = c; actualizarDatosPorCarga(dist, c); };
+                tbl.appendChild(row);
 
-                if (tablaDiv) {
-                    const row = document.createElement('div');
-                    row.className = "charge-row";
-                    row.innerHTML = `<span>CARGA ${c}</span><span style="color:#ffff00">${Math.round(datos.elev)}</span><span>${Math.round(buffer)}m</span>`;
-                    tablaDiv.appendChild(row);
-                }
-
-                if (mejorCarga === -1) {
-                    mejorCarga = c; mejorBuffer = buffer; motivo = "Carga óptima por menor desgaste.";
-                } else if (mejorBuffer < 100 && buffer > mejorBuffer) {
-                    mejorCarga = c; mejorBuffer = buffer; motivo = `Mayor margen de seguridad (${Math.round(buffer)}m).`;
-                }
+                if (best === -1 || (buff < 100 && b > buff)) { best = c; buff = b; }
             }
         }
     }
 
-    if (mejorCarga !== -1) {
-        select.value = mejorCarga;
-        actualizarDatosPorCarga(distanciaBalistica, mejorCarga);
-
-        if (recDiv) {
-            recDiv.innerHTML = `> RECOMENDACIÓN: CARGA ${mejorCarga}<br>> MOTIVO: ${motivo}`;
-            recDiv.style.color = "#4dff88";
-            recDiv.style.borderColor = "#4dff88";
-        }
+    if (best !== -1) {
+        sel.value = best; actualizarDatosPorCarga(dist, best);
+        if (rec) { rec.classList.remove('hidden'); rec.textContent = `REC: C ${best}`; rec.style.color = "#4f8"; }
     } else {
-        select.innerHTML = "<option value='FUERA'>FUERA DE RANGO</option>";
-        if (recDiv) {
-            recDiv.innerHTML = `> ALERTA: FUERA DE ALCANCE BALÍSTICO (${Math.round(distanciaBalistica)}m).`;
-            recDiv.style.color = "#ff5555";
-            recDiv.style.borderColor = "#ff5555";
-        }
-        actualizarDatosPorCarga(distanciaBalistica, 'FUERA');
+        sel.innerHTML = "<option>OUT</option>"; actualizarDatosPorCarga(dist, 'FUERA');
+        if (rec) { rec.classList.remove('hidden'); rec.textContent = "FUERA ALCANCE"; rec.style.color = "#f33"; }
     }
 }
 
-// --- FUNCIÓN CORREGIDA PARA QUE NO SE BLOQUEE SI FALTAN CAMPOS ---
-function actualizarDatosPorCarga(distanciaBalistica, cargaID) {
-    const tipoGranada = document.getElementById('tipoGranada').value;
-    const geo = obtenerGeometria();
-    if (!geo) return;
+function actualizarDatosPorCarga(dist, c) {
+    const rows = document.querySelectorAll('.charge-row'); rows.forEach(r => r.classList.remove('active'));
+    rows.forEach(r => { if (r.innerHTML.includes(`<span>${c}</span>`)) r.classList.add('active'); });
 
-    // Recalculo de Azimut
-    let valorVariacionBase = document.getElementById('check_bloqueo').checked ? variacionCongelada : (parseFloat(document.getElementById('input_variacion').value) || 0);
-    const chk = document.getElementById('check_aplicar_variacion');
-    const aplicarVariacion = chk ? chk.checked : true;
-    const variacionEfectiva = aplicarVariacion ? valorVariacionBase : 0;
+    const orient = parseFloat(document.getElementById('orientacion_base').value) || 0;
+    const az = parseFloat(document.getElementById('resAzimutMils').textContent) || 0;
+    let der = orient - az; while (der < 0) der += 6400; while (der >= 6400) der -= 6400;
 
-    let azimutDeTiro = geo.azMils + (variacionEfectiva * 17.777778);
-    azimutDeTiro = ((azimutDeTiro % 6400) + 6400) % 6400;
+    document.getElementById('cmd_orient').textContent = Math.round(orient);
+    document.getElementById('cmd_deriva').textContent = Math.round(der).toString().padStart(4, '0');
+    document.getElementById('cmd_dist').textContent = Math.round(dist);
 
-    const orientacion = parseFloat(document.getElementById('orientacion_base').value) || 0;
+    if (c === 'FUERA') { document.getElementById('cmd_elev').textContent = "-"; return; }
 
-    let diffDerivaRaw = orientacion - azimutDeTiro;
-    let derivaCmd = diffDerivaRaw;
-    while (derivaCmd < 0) derivaCmd += 6400;
-    while (derivaCmd >= 6400) derivaCmd -= 6400;
+    const dat = calcularBalistica(dist, document.getElementById('tipoGranada').value, c);
+    const ap = parseFloat(document.getElementById('alt_pieza').value) || 0, ao = parseFloat(document.getElementById('alt_obj').value) || 0;
+    const sit = (Math.atan((ao - ap) / dist) * 6400) / (Math.PI * 2);
 
-    // --- ACTUALIZACIÓN DOM SEGURA (Aquí está la corrección clave) ---
-    // Usamos 'if (elemento)' para verificar que existe antes de escribir
-
-    const elOrient = document.getElementById('cmd_orient');
-    if (elOrient) elOrient.textContent = Math.round(orientacion); // Si no existe, no pasa nada
-
-    const elDeriva = document.getElementById('cmd_deriva');
-    if (elDeriva) elDeriva.textContent = Math.round(derivaCmd).toString().padStart(4, '0');
-
-    const elDist = document.getElementById('cmd_dist');
-    if (elDist) elDist.textContent = Math.round(distanciaBalistica);
-
-    // Mini Excel (opcional)
-    const miniTabla = document.getElementById('mini-resumen');
-    if (miniTabla) {
-        miniTabla.classList.remove('hidden');
-        const elExcelDir = document.getElementById('excel_dir_rec');
-        if (elExcelDir) elExcelDir.textContent = Math.round(azimutDeTiro).toString().padStart(4, '0');
-
-        const elExcelMag = document.getElementById('excel_az_mag');
-        if (elExcelMag) elExcelMag.textContent = aplicarVariacion ? Math.round(azimutDeTiro).toString().padStart(4, '0') : "---";
-
-        const elExcelDiff = document.getElementById('excel_diff_deriva');
-        if (elExcelDiff) {
-            let valorAbs = Math.abs(Math.round(diffDerivaRaw)).toString().padStart(4, '0');
-            elExcelDiff.textContent = (diffDerivaRaw < 0 ? "-" : "") + valorAbs;
-        }
-
-        const elExcelD = document.getElementById('excel_dist');
-        if (elExcelD) elExcelD.textContent = Math.round(geo.dist);
-    }
-
-    if (cargaID === 'FUERA') {
-        const elElev = document.getElementById('cmd_elev');
-        if (elElev) elElev.textContent = "---";
-        const elTime = document.getElementById('cmd_time');
-        if (elTime) elTime.textContent = "---";
-        return;
-    }
-
-    const datos = calcularBalistica(distanciaBalistica, tipoGranada, cargaID);
-
-    // Angulo de Sitio
-    let altPieza = parseFloat(document.getElementById('alt_pieza').value) || 0;
-    let altObj = parseFloat(document.getElementById('alt_obj').value) || 0;
-    const diffAlt = altObj - altPieza;
-    const angSitRad = Math.atan(diffAlt / geo.dist);
-    const angSitMils = (angSitRad * 6400) / (2 * Math.PI);
-
-    let elevFinal = datos.elev - angSitMils;
-
-    const elElev = document.getElementById('cmd_elev');
-    if (elElev) elElev.textContent = isNaN(elevFinal) ? "---" : Math.round(elevFinal);
-
-    const elTime = document.getElementById('cmd_time');
-    if (elTime) elTime.textContent = datos.tiempo;
-
-    const filas = document.querySelectorAll('.charge-row');
-    filas.forEach(f => f.classList.remove('active'));
-    for (let f of filas) {
-        if (f.textContent.includes(`CARGA ${cargaID}`)) f.classList.add('active');
-    }
+    document.getElementById('cmd_elev').textContent = Math.round(dat.elev - sit);
+    document.getElementById('cmd_time').textContent = dat.tiempo;
 }
+
+// EN js/main.js
 
 function aplicarCorreccion() {
-    const geo = obtenerGeometria();
-    if (!geo) { alert("Defina coordenadas primero."); return; }
+    const mx = parseFloat(document.getElementById('mx').value), my = parseFloat(document.getElementById('my').value);
+    const tx = parseFloat(document.getElementById('tx').value), ty = parseFloat(document.getElementById('ty').value);
+    if (isNaN(mx) || isNaN(tx)) return;
 
-    let ox = parseFloat(document.getElementById('ox').value);
-    let oy = parseFloat(document.getElementById('oy').value);
-    if (isNaN(ox) || isNaN(oy)) { ox = geo.mx; oy = geo.my; }
+    let ox = parseFloat(document.getElementById('ox').value), oy = parseFloat(document.getElementById('oy').value);
+    if (isNaN(ox) || isNaN(oy)) { ox = mx; oy = my; }
 
     const metodo = document.getElementById('metodo_reglaje').value;
-    let newTx, newTy, descripcionCorreccion = "", impactoX, impactoY;
+    let impX, impY, logMsg = "";
 
     if (metodo === 'apreciacion') {
-        const valLateral = parseFloat(document.getElementById('corr_lat_val').value) || 0;
-        const valAlcance = parseFloat(document.getElementById('corr_metros').value) || 0;
-        if (valLateral === 0 && valAlcance === 0) return;
+        const valLat = parseFloat(document.getElementById('corr_lat_val').value) || 0;
+        const valAlc = parseFloat(document.getElementById('corr_metros').value) || 0;
+        if (valLat === 0 && valAlc === 0) return;
 
         const dirLat = document.getElementById('corr_dir').value;
         const unitLat = document.getElementById('corr_lat_unit').value;
         const dirAlc = document.getElementById('corr_range').value;
 
-        const txtLat = (valLateral > 0) ? `${(dirLat === 'right' ? 'Der' : 'Izq')} ${valLateral}${unitLat}` : "";
-        const txtAlc = (valAlcance > 0) ? `${(dirAlc === 'over' ? 'Largo (+)' : 'Corto (-)')} ${valAlcance}` : "";
-        descripcionCorreccion = [txtLat, txtAlc].filter(Boolean).join(", ");
-
-        const dx = geo.tx - ox;
-        const dy = geo.ty - oy;
+        const dx = tx - ox, dy = ty - oy;
+        const azOT = Math.atan2(dx, dy);
         const distOT = Math.sqrt(dx * dx + dy * dy);
-        const azOTRad = Math.atan2(dx, dy);
 
-        let shiftLateral = (unitLat === 'm') ? valLateral : (distOT * valLateral) / 1000;
-        let shiftAlcance = valAlcance;
-        let moveAlc = (dirAlc === 'over') ? shiftAlcance : -shiftAlcance;
-        let moveLat = (dirLat === 'right') ? shiftLateral : -shiftLateral;
+        let shiftLat = (unitLat === 'm') ? valLat : (distOT * valLat) / 1000;
+        let shiftAlc = valAlc;
 
-        const shiftImpactoX = (moveAlc * Math.sin(azOTRad)) + (moveLat * Math.cos(azOTRad));
-        const shiftImpactoY = (moveAlc * Math.cos(azOTRad)) - (moveLat * Math.sin(azOTRad));
+        let impOffsetLat = (dirLat === 'right') ? shiftLat : -shiftLat;
+        let impOffsetAlc = (dirAlc === 'over') ? shiftAlc : -shiftAlc;
 
-        impactoX = geo.tx + shiftImpactoX;
-        impactoY = geo.ty + shiftImpactoY;
-        newTx = geo.tx - shiftImpactoX;
-        newTy = geo.ty - shiftImpactoY;
+        impX = tx + (impOffsetAlc * Math.sin(azOT)) + (impOffsetLat * Math.cos(azOT));
+        impY = ty + (impOffsetAlc * Math.cos(azOT)) - (impOffsetLat * Math.sin(azOT));
+
+        const newTx = tx - (impX - tx);
+        const newTy = ty - (impY - ty);
+
+        document.getElementById('tx').value = newTx.toFixed(0);
+        document.getElementById('ty').value = newTy.toFixed(0);
+
+        logMsg = `APR: ${dirLat === 'right' ? 'Der' : 'Izq'} ${valLat}${unitLat}, ${dirAlc === 'over' ? '+' : '-'}${valAlc}m`;
 
         document.getElementById('corr_lat_val').value = "";
         document.getElementById('corr_metros').value = "";
+
     } else {
         const impAz = parseFloat(document.getElementById('impacto_az').value);
         const impDist = parseFloat(document.getElementById('impacto_dist').value);
-        const impUnit = document.getElementById('impacto_az_unit').value;
-        if (isNaN(impAz) || isNaN(impDist)) { alert("Faltan datos de impacto."); return; }
+        const unit = document.getElementById('impacto_az_unit').value;
 
-        const unitText = (impUnit === 'mils') ? 'mils' : '°';
-        descripcionCorreccion = `Imp: AZ ${impAz}${unitText}, Dist ${impDist}m`;
-        let impAzRad = (impUnit === 'mils') ? impAz * (2 * Math.PI / 6400) : impAz * (Math.PI / 180);
+        if (isNaN(impAz) || isNaN(impDist)) return;
 
-        impactoX = ox + (impDist * Math.sin(impAzRad));
-        impactoY = oy + (impDist * Math.cos(impAzRad));
-        newTx = geo.tx - (impactoX - geo.tx);
-        newTy = geo.ty - (impactoY - geo.ty);
+        const rad = (unit === 'mils') ? impAz * (Math.PI * 2 / 6400) : impAz * (Math.PI / 180);
+        impX = ox + impDist * Math.sin(rad);
+        impY = oy + impDist * Math.cos(rad);
+
+        const errorX = impX - tx;
+        const errorY = impY - ty;
+
+        document.getElementById('tx').value = (tx - errorX).toFixed(0);
+        document.getElementById('ty').value = (ty - errorY).toFixed(0);
+
+        logMsg = `MED: Az ${impAz}${unit}, Dist ${impDist}m`;
 
         document.getElementById('impacto_az').value = "";
         document.getElementById('impacto_dist').value = "";
     }
 
-    historialImpactos.push({ x: impactoX, y: impactoY, id: contadorReglajes + 1 });
-    document.getElementById('tx').value = newTx.toFixed(0);
-    document.getElementById('ty').value = newTy.toFixed(0);
+    historialImpactos.push({ x: impX, y: impY, id: ++contadorReglajes });
+
+    // NUEVO ESTILO DE HISTORIAL
+    const list = document.getElementById('lista-historial');
+    if (contadorReglajes === 1) list.innerHTML = ''; // Borrar placeholder
+
+    const row = document.createElement('div');
+    row.className = 'history-row-styled';
+    row.innerHTML = `<span class="hist-id">#${contadorReglajes.toString().padStart(2, '0')}</span><span class="hist-data">${logMsg}</span><span class="hist-status">CORREGIDO</span>`;
+    list.prepend(row);
+
     calcularYDibujar();
-    agregarAlHistorial(descripcionCorreccion);
+}
+
+function reiniciarHistorial() {
+    contadorReglajes = 0;
+    historialImpactos = [];
+    document.getElementById('lista-historial').innerHTML = '<div class="history-placeholder">Esperando datos...</div>';
+    calcularYDibujar();
+}
+function gestionarBloqueo() {
+    const l = document.getElementById('check_bloqueo').checked;
+    ['fecha_tiro', 'zona_utm', 'orientacion_base'].forEach(i => {
+        const el = document.getElementById(i); if (el) el.disabled = l;
+    });
+}
+
+function obtenerGeometria() {
+    const mx = parseFloat(document.getElementById('mx').value), my = parseFloat(document.getElementById('my').value);
+    const tx = parseFloat(document.getElementById('tx').value), ty = parseFloat(document.getElementById('ty').value);
+    if (isNaN(mx) || isNaN(tx)) return null;
+    const dx = tx - mx, dy = ty - my;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    let az = Math.atan2(dx, dy) * 6400 / (Math.PI * 2);
+    if (az < 0) az += 6400;
+    return { mx, my, tx, ty, dist, azMils: az };
 }
 
 function dibujarRadar(mx, my, tx, ty, ox, oy) {
-    const canvas = document.getElementById('radarCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
-    const cx = w / 2;
-    const cy = h / 2;
-    ctx.clearRect(0, 0, w, h);
+    const c = document.getElementById('radarCanvas'), ctx = c.getContext('2d');
+    c.width = c.offsetWidth; c.height = c.offsetHeight; ctx.clearRect(0, 0, c.width, c.height);
+    const cx = c.width / 2, cy = c.height / 2;
 
-    // Retícula
-    ctx.strokeStyle = '#004400'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, cy, w * 0.2, 0, 2 * Math.PI); ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, cy, w * 0.4, 0, 2 * Math.PI); ctx.stroke();
+    // Grilla
+    ctx.strokeStyle = '#003300'; ctx.beginPath();
+    ctx.arc(cx, cy, c.height * 0.25, 0, 6.28); ctx.stroke();
+    ctx.arc(cx, cy, c.height * 0.45, 0, 6.28); ctx.stroke();
+    ctx.moveTo(cx, 0); ctx.lineTo(cx, c.height); ctx.moveTo(0, cy); ctx.lineTo(c.width, cy); ctx.stroke();
 
     if (isNaN(mx) || isNaN(tx)) return;
 
-    let maxDist = Math.sqrt(Math.pow(tx - mx, 2) + Math.pow(ty - my, 2));
-    historialImpactos.forEach(pt => {
-        let d = Math.sqrt(Math.pow(pt.x - mx, 2) + Math.pow(pt.y - my, 2));
-        if (d > maxDist) maxDist = d;
+    // Escala dinámica
+    let max = 3000;
+    historialImpactos.forEach(h => { max = Math.max(max, Math.sqrt((h.x - mx) ** 2 + (h.y - my) ** 2)); });
+    max = Math.max(max, Math.sqrt((tx - mx) ** 2 + (ty - my) ** 2));
+    const s = (c.height / 2) / (max * 1.3);
+    const p = (x, y) => ({ x: cx + (x - mx) * s, y: cy - (y - my) * s });
+
+    const t = p(tx, ty);
+    ctx.strokeStyle = '#0f0'; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(t.x, t.y); ctx.stroke(); ctx.setLineDash([]);
+
+    ctx.fillStyle = '#4f8'; ctx.fillText('M', cx + 5, cy - 5); ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 6.28); ctx.fill();
+    ctx.fillStyle = '#f33'; ctx.fillText('T', t.x + 5, t.y - 5); ctx.beginPath(); ctx.arc(t.x, t.y, 3, 0, 6.28); ctx.fill();
+
+    historialImpactos.forEach(h => {
+        const ip = p(h.x, h.y);
+        ctx.fillStyle = '#fa0'; ctx.fillText(h.id, ip.x + 3, ip.y - 3); ctx.fillRect(ip.x - 2, ip.y - 2, 4, 4);
     });
 
-    const rangeLimit = Math.max(6000, maxDist * 1.2);
-    const scale = (w / 2) / rangeLimit;
-    function plot(x, y) { return { x: cx + (x - mx) * scale, y: cy - (y - my) * scale }; }
-
-    const tPos = plot(tx, ty);
-    ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)'; ctx.setLineDash([5, 5]);
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tPos.x, tPos.y); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = '#00ff41'; ctx.fillText('M', cx + 5, cy - 5); ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI); ctx.fill();
-
-    historialImpactos.forEach(imp => {
-        const iPos = plot(imp.x, imp.y);
-        ctx.fillStyle = '#ffaa00'; ctx.fillText(imp.id, iPos.x + 4, iPos.y - 4);
-        ctx.beginPath(); ctx.arc(iPos.x, iPos.y, 2, 0, 2 * Math.PI); ctx.fill();
-    });
-
-    ctx.fillStyle = 'red'; ctx.fillText('T', tPos.x + 6, tPos.y - 6);
-    ctx.strokeStyle = 'red'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(tPos.x - 4, tPos.y - 4); ctx.lineTo(tPos.x + 4, tPos.y + 4); ctx.moveTo(tPos.x + 4, tPos.y - 4); ctx.lineTo(tPos.x - 4, tPos.y + 4); ctx.stroke();
-
-    if (!isNaN(ox) && !isNaN(oy)) {
-        const oPos = plot(ox, oy);
-        ctx.fillStyle = 'cyan'; ctx.fillText('Obs', oPos.x + 5, oPos.y - 5);
-        ctx.fillStyle = 'cyan'; ctx.fillRect(oPos.x - 2, oPos.y - 2, 4, 4);
+    if (!isNaN(ox)) {
+        const o = p(ox, oy);
+        ctx.fillStyle = '#0ff'; ctx.fillText('Obs', o.x + 5, o.y - 5); ctx.fillRect(o.x - 2, o.y - 2, 4, 4);
     }
 }
 
-function dmsToDecimal(idPrefix) {
-    const d = parseFloat(document.getElementById(idPrefix + '_d').value) || 0;
-    const m = parseFloat(document.getElementById(idPrefix + '_m').value) || 0;
-    const s = parseFloat(document.getElementById(idPrefix + '_s').value) || 0;
-    return -1 * (d + m / 60 + s / 3600);
-}
-
-function fillDMS(idPrefix, val) {
-    val = Math.abs(val);
-    const d = Math.floor(val);
-    const rem = (val - d) * 60;
-    const m = Math.floor(rem);
-    const s = ((rem - m) * 60).toFixed(2);
-    if (document.getElementById(idPrefix + '_d')) document.getElementById(idPrefix + '_d').value = d;
-    if (document.getElementById(idPrefix + '_m')) document.getElementById(idPrefix + '_m').value = m;
-    if (document.getElementById(idPrefix + '_s')) document.getElementById(idPrefix + '_s').value = s;
-}
-
-if (typeof proj4 !== 'undefined') {
-    proj4.defs("EPSG:32718", "+proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs");
-}
+// Proj4 Def
+if (typeof proj4 !== 'undefined') proj4.defs("EPSG:32718", "+proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs");

@@ -1,108 +1,88 @@
-if (typeof proj4 !== 'undefined') {
-    proj4.defs("EPSG:32718", "+proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs");
-}
 
-/* * Función Principal: calcularBalistica
- * Calcula la solución de tiro (Elevación, Tiempo, Factores) para una distancia dada.
- * Realiza interpolación lineal entre los datos de la tabla de tiro.
- */
 function calcularBalistica(distancia, tipoID, cargaForzada = null) {
     const BD = ARSENAL[tipoID];
-    
     if (!BD) return { status: "ERROR", carga: "NO DB", elev: 0, tiempo: "-" };
 
     let cargaElegida = -1;
-    const rangos = BD.rangos;
 
-    // 1. Lógica de Selección de Carga
-    if (cargaForzada !== null && cargaForzada !== undefined && cargaForzada !== "-") {
+    if (cargaForzada && cargaForzada !== "-" && BD.cargas[cargaForzada]) {
         cargaElegida = cargaForzada;
-    } 
-    else {
-        // Selección Automática (Busca la más segura)
-        let mejorCarga = -1;
+    } else {
         let mejorBuffer = -1;
-
-        for (const c in rangos) {
-            const min = rangos[c].min;
-            const max = rangos[c].max;
-
+        for (const c in BD.rangos) {
+            const min = BD.rangos[c].min;
+            const max = BD.rangos[c].max;
             if (distancia >= min && distancia <= max) {
-                const buffer = max - distancia; 
-                
-                if (mejorCarga === -1) {
-                    mejorCarga = c;
+                const buffer = max - distancia;
+                if (cargaElegida === -1 || (mejorBuffer < 200 && buffer > mejorBuffer)) {
+                    cargaElegida = c;
                     mejorBuffer = buffer;
-                } else {
-                    if (mejorBuffer < 100 && buffer > mejorBuffer) {
-                        mejorCarga = c;
-                        mejorBuffer = buffer;
-                    }
                 }
             }
         }
-        cargaElegida = mejorCarga;
     }
 
-    if (cargaElegida === -1) return { status: "ERROR", carga: "FUERA", elev: 0, tiempo: "-" };
+    if (cargaElegida === -1) return { status: "ERROR", carga: "FUERA", elev: 0, tiempo: "--" };
 
-    // 2. Obtención de datos de la tabla
-    const datosCarga = BD.cargas[cargaElegida];
-    let tablaCarga = [];
-    let factores = { v_traves: 0, v_cola: 0, t_aire: 0, peso: 0 }; 
+    const tabla = BD.cargas[cargaElegida];
 
-    if (Array.isArray(datosCarga)) {
-        tablaCarga = datosCarga;
-    } else {
-        tablaCarga = datosCarga.tabla;
-        if (datosCarga.factores) { 
-            factores = datosCarga.factores;
-        } else if (datosCarga.factores_genericos) {
-            factores = datosCarga.factores_genericos;
-        }
-    }
-
-    if (!tablaCarga || tablaCarga.length === 0) return { status: "ERROR", carga: cargaElegida, elev: 0, tiempo: "NO DATA" };
-
-    // 3. Interpolación Lineal (Matemática)
-    let fila1 = null, fila2 = null;
-    
-    for (let i = 0; i < tablaCarga.length - 1; i++) {
-        if (distancia >= tablaCarga[i].m && distancia <= tablaCarga[i+1].m) {
-            fila1 = tablaCarga[i];
-            fila2 = tablaCarga[i+1];
-            break;
-        }
-    }
-
-    if (fila1 && fila2) {
-        const factor = (distancia - fila1.m) / (fila2.m - fila1.m);
-        
-        // Cálculo Elevación
-        const elev = fila1.elev + factor * (fila2.elev - fila1.elev);
-        
-        // Cálculo Tiempo
-        const t1 = fila1.t || 0;
-        const t2 = fila2.t || 0;
-        const t = t1 + factor * (t2 - t1);
-        const f_vtraves = (fila1.v_traves !== undefined) ? fila1.v_traves : factores.v_traves;
-        const f_vcola = (fila1.v_cola !== undefined) ? fila1.v_cola : factores.v_cola;
-        const f_temp = factores.t_aire || 0;
-        const f_peso = factores.peso || 0;
-
-        return { 
-            status: "OK", 
-            carga: cargaElegida, 
-            elev: elev, 
-            tiempo: t > 0 ? t.toFixed(1) : "--",
-            factores: { 
-                v_traves: f_vtraves, 
-                v_cola: f_vcola, 
-                t_aire: f_temp, 
-                peso: f_peso 
+    function interpolarFila(distObj) {
+        let f1 = tabla[0], f2 = tabla[tabla.length - 1];
+        for (let i = 0; i < tabla.length - 1; i++) {
+            if (distObj >= tabla[i][0] && distObj <= tabla[i + 1][0]) {
+                f1 = tabla[i];
+                f2 = tabla[i + 1];
+                break;
             }
-        };
+        }
+        const rango = f2[0] - f1[0];
+        const factor = (rango === 0) ? 0 : (distObj - f1[0]) / rango;
+        return f1.map((val, idx) => val + (f2[idx] - val) * factor);
     }
 
-    return { status: "ERROR", carga: cargaElegida, elev: 0, tiempo: "ERR INT" };
+    const datosBase = interpolarFila(distancia);
+
+    let tiempoBase = datosBase[2];
+    let f_vTrav = datosBase[3];
+    let f_vCola = datosBase[4];
+    let f_Vi = datosBase[5];
+    let f_Temp = datosBase[6];
+    let f_Peso = datosBase[7];
+    let f_Pres = datosBase[8];
+
+    const vientoVel = parseFloat(document.getElementById('meteo_vel').value) || 0;
+    const vientoDir = parseFloat(document.getElementById('meteo_dir').value) || 0;
+    const tempAire = parseFloat(document.getElementById('meteo_temp').value) || 15;
+    const presion = parseFloat(document.getElementById('meteo_pres')?.value) || 750;
+    const azimutTiroMils = parseFloat(document.getElementById('resAzimutMils').textContent) || 0;
+
+    const difPeso = parseFloat(document.getElementById('dif_peso')?.value) || 0;
+    const difVel = parseFloat(document.getElementById('dif_vel')?.value) || 0;
+
+    const azTiroGrados = azimutTiroMils * (360 / 6400);
+    const anguloRelativo = (vientoDir - azTiroGrados) * (Math.PI / 180);
+
+    const vColaComp = vientoVel * Math.cos(anguloRelativo);
+    const vTravComp = vientoVel * Math.sin(anguloRelativo);
+
+    let err_Viento = vColaComp * f_vCola;
+    let err_Temp = (tempAire - 15) * f_Temp;
+    let err_Pres = (750 - presion) * f_Pres;
+    let err_Vi = difVel * f_Vi;
+    let err_Peso = difPeso * f_Peso;
+
+    let totalErrorAlcance = err_Viento + err_Temp + err_Pres + err_Vi + err_Peso;
+    let distanciaFicticia = distancia - totalErrorAlcance;
+
+    const datosFinales = interpolarFila(distanciaFicticia);
+    let elevFinal = datosFinales[1];
+    let corrDerivaMils = vTravComp * f_vTrav;
+
+    return {
+        status: "OK",
+        carga: cargaElegida,
+        elev: elevFinal,
+        tiempo: tiempoBase.toFixed(1),
+        corrDeriva: corrDerivaMils
+    };
 }
