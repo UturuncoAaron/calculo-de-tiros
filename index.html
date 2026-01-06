@@ -4,15 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCT TÁCTICO - FÉNIX V14.0 (FINAL UI)</title>
+    <title>MORTEROS-MARIA V17.0 (FINAL LIMA)</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap"
         rel="stylesheet">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -23,7 +26,7 @@
             <header class="screen-header">
                 <div class="header-left">
                     <div class="status-led online" id="conn-status"></div>
-                    <h1>SCT TÁCTICO // FÉNIX V14.0</h1>
+                    <h1>MORTEROS-MARIA // SISTEMA DE TIRO</h1>
                 </div>
                 <div class="header-right">
                     <div class="mini-control">
@@ -43,16 +46,21 @@
                 </div>
             </header>
 
-            <div class="main-split-layout">
+            <div class="main-split-layout" id="main-layout">
 
-                <div class="left-zone">
-                    <div class="radar-viewer-large">
+                <div class="left-zone" id="left-zone">
+
+                    <div class="radar-viewer-large" id="map-container">
                         <div id="map"></div>
                         <canvas id="radarCanvas"></canvas>
-                        <div class="radar-overlay-info"><span id="mode-indicator">SYSTEM READY</span></div>
+                        <div class="radar-overlay-info"><span id="mode-indicator">SYSTEM READY - LIMA MODE</span></div>
                     </div>
 
-                    <div class="bottom-inputs-grid">
+                    <div class="resizer-h" id="resizer-h">
+                        <div class="grip-lines"></div>
+                    </div>
+
+                    <div class="bottom-inputs-grid" id="bottom-panel">
 
                         <div class="input-card">
                             <div class="card-header text-green">1. POSICIONES</div>
@@ -104,16 +112,15 @@
                         <div class="input-card wide-card">
                             <div class="card-header text-yellow">3. DATOS BALÍSTICOS & METEO</div>
                             <div class="card-body vertical-stack tight-gap">
-
                                 <div class="bal-row">
                                     <div class="bal-field"><label>VIENTO (DIR°)</label><input type="number"
-                                            id="meteo_dir" placeholder="196"></div>
+                                            id="meteo_dir" value="196"></div>
                                     <div class="bal-field"><label>VEL (m/s)</label><input type="number" id="meteo_vel"
-                                            placeholder="4.5"></div>
+                                            value="4.5"></div>
                                     <div class="bal-field"><label>TEMP AIRE</label><input type="number" id="meteo_temp"
                                             value="17.2"></div>
                                     <div class="bal-field"><label>PRESIÓN</label><input type="number" id="meteo_pres"
-                                            placeholder="746"></div>
+                                            value="746.4"></div>
                                 </div>
 
                                 <div class="bal-row">
@@ -134,7 +141,7 @@
                                     <div class="var-container">
                                         <div class="var-data">
                                             <label>VARIACIÓN CALC</label>
-                                            <input type="number" id="input_variacion" value="-3.50" readonly>
+                                            <input type="text" id="input_variacion" value="-3.52" readonly>
                                         </div>
                                         <div class="switch-wrapper">
                                             <label class="switch-container">
@@ -145,14 +152,13 @@
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
-
                     </div>
                 </div>
+                <div class="resizer-v" id="resizer-v"></div>
 
-                <div class="right-sidebar">
+                <div class="right-sidebar" id="right-sidebar">
 
                     <div class="sidebar-section orient-box">
                         <label class="section-label text-amber">ORIENTACIÓN INICIAL (MILS)</label>
@@ -266,18 +272,15 @@
                         <div id="lista-historial" class="history-list-styled">
                             <div class="history-placeholder">Esperando datos...</div>
                         </div>
+
+                        <button id="btnGuardarManual" class="btn-save-styled">💾 GUARDAR MISIÓN ACTUAL</button>
+
                         <button id="btnResetHistorial" class="btn-reset-styled">BORRAR REGISTRO</button>
                     </div>
 
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="hidden">
-        <input type="number" id="decl_grados"><input type="number" id="decl_minutos">
-        <span id="resAzimutMils_float"></span>
-        <div id="tabla-cargas"></div>
     </div>
 
     <script src="js/database.js"></script>

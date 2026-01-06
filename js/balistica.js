@@ -1,10 +1,11 @@
-
+/**
+ * Calcula la solución de tiro, interpolando datos y aplicando correcciones meteorológicas si el interruptor está activo.
+ */
 function calcularBalistica(distancia, tipoID, cargaForzada = null) {
     const BD = ARSENAL[tipoID];
     if (!BD) return { status: "ERROR", carga: "NO DB", elev: 0, tiempo: "-" };
 
     let cargaElegida = -1;
-
     if (cargaForzada && cargaForzada !== "-" && BD.cargas[cargaForzada]) {
         cargaElegida = cargaForzada;
     } else {
@@ -50,15 +51,27 @@ function calcularBalistica(distancia, tipoID, cargaForzada = null) {
     let f_Peso = datosBase[7];
     let f_Pres = datosBase[8];
 
-    const vientoVel = parseFloat(document.getElementById('meteo_vel').value) || 0;
-    const vientoDir = parseFloat(document.getElementById('meteo_dir').value) || 0;
-    const tempAire = parseFloat(document.getElementById('meteo_temp').value) || 15;
-    const presion = parseFloat(document.getElementById('meteo_pres')?.value) || 750;
+    const switchLibre = !document.getElementById('check_bloqueo')?.checked;
+
+    let vientoVel, vientoDir, tempAire, presion, difPeso, difVel;
+
+    if (switchLibre) {
+        vientoVel = parseFloat(document.getElementById('meteo_vel').value) || 0;
+        vientoDir = parseFloat(document.getElementById('meteo_dir').value) || 0;
+        tempAire = parseFloat(document.getElementById('meteo_temp').value) || 15;
+        presion = parseFloat(document.getElementById('meteo_pres')?.value) || 750;
+        difPeso = parseFloat(document.getElementById('dif_peso')?.value) || 0;
+        difVel = parseFloat(document.getElementById('dif_vel')?.value) || 0;
+    } else {
+        vientoVel = 0;
+        vientoDir = 0;
+        tempAire = 15;
+        presion = 750;
+        difPeso = 0;
+        difVel = 0;
+    }
+
     const azimutTiroMils = parseFloat(document.getElementById('resAzimutMils').textContent) || 0;
-
-    const difPeso = parseFloat(document.getElementById('dif_peso')?.value) || 0;
-    const difVel = parseFloat(document.getElementById('dif_vel')?.value) || 0;
-
     const azTiroGrados = azimutTiroMils * (360 / 6400);
     const anguloRelativo = (vientoDir - azTiroGrados) * (Math.PI / 180);
 
